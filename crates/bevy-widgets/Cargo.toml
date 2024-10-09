@@ -12,6 +12,7 @@ bevy_ecs = { git = "https://github.com/bevyengine/bevy", rev = "bc352561c9814112
 bevy_hierarchy = { git = "https://github.com/bevyengine/bevy", rev = "bc352561c9814112dbcf5925a4476f135d758c65" }
 bevy_log = { git = "https://github.com/bevyengine/bevy", rev = "bc352561c9814112dbcf5925a4476f135d758c65" }
 bevy_math = { git = "https://github.com/bevyengine/bevy", rev = "bc352561c9814112dbcf5925a4476f135d758c65" }
+bevy_picking = { git = "https://github.com/bevyengine/bevy", rev = "bc352561c9814112dbcf5925a4476f135d758c65" }
 bevy_reflect = { git = "https://github.com/bevyengine/bevy", rev = "bc352561c9814112dbcf5925a4476f135d758c65" }
 bevy_state = { git = "https://github.com/bevyengine/bevy", rev = "bc352561c9814112dbcf5925a4476f135d758c65" }
 bevy_text = { git = "https://github.com/bevyengine/bevy", rev = "bc352561c9814112dbcf5925a4476f135d758c65" }
@@ -20,5 +21,7 @@ bevy_ui = { git = "https://github.com/bevyengine/bevy", rev = "bc352561c9814112d
 bevy_utils = { git = "https://github.com/bevyengine/bevy", rev = "bc352561c9814112dbcf5925a4476f135d758c65" }
 bevy_window = { git = "https://github.com/bevyengine/bevy", rev = "bc352561c9814112dbcf5925a4476f135d758c65" }
 
+arboard = "3.4.1"
+
 [dev-dependencies]
-bevy = {git = "https://github.com/bevyengine/bevy", rev = "bc352561c9814112dbcf5925a4476f135d758c65"}
+# bevy = {git = "https://github.com/bevyengine/bevy", rev = "bc352561c9814112dbcf5925a4476f135d758c65"}

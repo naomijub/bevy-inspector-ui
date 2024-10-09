@@ -58,50 +58,50 @@ enum Allowed<T> {
     ForbidList(SmallVec<[T; 2]>),
 }
 impl<T: Clone + PartialEq> Allowed<T> {
-    fn allow_just(value: T) -> Allowed<T> {
-        Allowed::AllowList(smallvec![value])
+    fn allow_just(value: T) -> Self {
+        Self::AllowList(smallvec![value])
     }
-    fn allow(values: impl IntoIterator<Item = T>) -> Allowed<T> {
-        Allowed::AllowList(values.into_iter().collect())
+    fn allow(values: impl IntoIterator<Item = T>) -> Self {
+        Self::AllowList(values.into_iter().collect())
     }
-    fn everything() -> Allowed<T> {
-        Allowed::ForbidList(SmallVec::new())
+    fn everything() -> Self {
+        Self::ForbidList(SmallVec::new())
     }
-    fn nothing() -> Allowed<T> {
-        Allowed::AllowList(SmallVec::new())
+    fn nothing() -> Self {
+        Self::AllowList(SmallVec::new())
     }
 
     fn allows_access_to(&self, value: T) -> bool {
         match self {
-            Allowed::AllowList(list) => list.contains(&value),
-            Allowed::ForbidList(list) => !list.contains(&value),
+            Self::AllowList(list) => list.contains(&value),
+            Self::ForbidList(list) => !list.contains(&value),
         }
     }
 
-    fn without(&self, value: T) -> Allowed<T> {
+    fn without(&self, value: T) -> Self {
         match self {
-            Allowed::AllowList(list) => {
+            Self::AllowList(list) => {
                 let position = list
                     .iter()
                     .position(|item| *item == value)
                     .expect("called `without` without access");
                 let mut new = list.clone();
                 new.swap_remove(position);
-                Allowed::AllowList(new)
+                Self::AllowList(new)
             }
-            Allowed::ForbidList(list) => {
+            Self::ForbidList(list) => {
                 let mut new = list.clone();
                 new.push(value);
-                Allowed::ForbidList(new)
+                Self::ForbidList(new)
             }
         }
     }
-    fn without_many(&self, values: impl Iterator<Item = T>) -> Allowed<T>
+    fn without_many(&self, values: impl Iterator<Item = T>) -> Self
     where
         T: Copy,
     {
         match self {
-            Allowed::AllowList(list) => {
+            Self::AllowList(list) => {
                 let new = list.clone();
                 for value in values {
                     let position = list
@@ -111,12 +111,12 @@ impl<T: Clone + PartialEq> Allowed<T> {
                     let mut new = list.clone();
                     new.swap_remove(position);
                 }
-                Allowed::AllowList(new)
+                Self::AllowList(new)
             }
-            Allowed::ForbidList(list) => {
+            Self::ForbidList(list) => {
                 let mut new = list.clone();
                 new.extend(values);
-                Allowed::ForbidList(new)
+                Self::ForbidList(new)
             }
         }
     }
@@ -131,7 +131,7 @@ impl<'a> From<&'a mut World> for RestrictedWorldView<'a> {
 /// Fundamental methods for working with a [`RestrictedWorldView`]
 impl<'w> RestrictedWorldView<'w> {
     /// Create a new [`RestrictedWorldView`] with permission to access everything.
-    pub fn new(world: &'w mut World) -> RestrictedWorldView<'w> {
+    pub fn new(world: &'w mut World) -> Self {
         // INVARIANTS: `world` is `&mut` so we have access to everything
         RestrictedWorldView {
             world: world.as_unsafe_world_cell(),
@@ -143,7 +143,7 @@ impl<'w> RestrictedWorldView<'w> {
     /// Splits the world into one view which may only be used for resource access, and another which may only be used for component access.
     pub fn resources_components(
         world: &'w mut World,
-    ) -> (RestrictedWorldView<'w>, RestrictedWorldView<'w>) {
+    ) -> (Self, Self) {
         let world = world.as_unsafe_world_cell();
 
         // INVARIANTS: `world` is `&mut` so we have access to everything
@@ -161,7 +161,7 @@ impl<'w> RestrictedWorldView<'w> {
         (resources, components)
     }
 
-    pub fn world(&self) -> UnsafeWorldCell<'w> {
+    pub const fn world(&self) -> UnsafeWorldCell<'w> {
         self.world
     }
 
@@ -199,7 +199,7 @@ impl<'w> RestrictedWorldView<'w> {
     /// Like [`RestrictedWorldView::split_off_resource`], but takes `self` and returns `'w` lifetimes.
     pub fn split_off_resource_typed<R: Resource>(
         self,
-    ) -> Option<(Mut<'w, R>, RestrictedWorldView<'w>)> {
+    ) -> Option<(Mut<'w, R>, Self)> {
         let type_id = TypeId::of::<R>();
         assert!(self.allows_access_to_resource(type_id));
 

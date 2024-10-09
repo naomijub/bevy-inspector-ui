@@ -4,7 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [features]
-default = ["dep:bevy_pbr", "bevy_render"]
+default = ["bevy_pbr", "bevy_render"]
+bevy_pbr = ["dep:bevy_pbr"]
 bevy_render = ["dep:bevy_render", "dep:bevy_core_pipeline",]
 highlight_changes = []
 

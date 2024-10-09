@@ -1,4 +1,5 @@
 use bevy_color::Color;
+use bevy_ecs::entity::Entity;
 use bevy_ecs::prelude::{Component, ReflectComponent};
 use bevy_ecs::{
     query::{Changed, With},
@@ -50,29 +51,29 @@ pub enum ButtonSize {
 
 impl ButtonSize {
     /// Font size for each button size
-    pub fn font_size(&self) -> f32 {
+    pub const fn font_size(&self) -> f32 {
         match self {
-            ButtonSize::Small => SMALL_MEDIUM_FONT_SIZE,
-            ButtonSize::Medium => SMALL_MEDIUM_FONT_SIZE,
-            ButtonSize::Large => LARGE_FONT_SIZE,
+            Self::Small => SMALL_MEDIUM_FONT_SIZE,
+            Self::Medium => SMALL_MEDIUM_FONT_SIZE,
+            Self::Large => LARGE_FONT_SIZE,
         }
     }
 
     /// Height for each button size
-    pub fn height(&self) -> Val {
+    pub const fn height(&self) -> Val {
         match self {
-            ButtonSize::Small => Val::Px(20.),
-            ButtonSize::Medium => Val::Px(24.),
-            ButtonSize::Large => Val::Px(30.),
+            Self::Small => Val::Px(20.),
+            Self::Medium => Val::Px(24.),
+            Self::Large => Val::Px(30.),
         }
     }
 
     /// Padding for each button size (both horizontal and vertical)
     pub fn padding(&self) -> UiRect {
         match self {
-            ButtonSize::Small => UiRect::axes(Val::Px(16.), Val::Px(8.)),
-            ButtonSize::Medium => UiRect::axes(Val::Px(20.), Val::Px(12.)),
-            ButtonSize::Large => UiRect::axes(Val::Px(24.), Val::Px(16.)),
+            Self::Small => UiRect::axes(Val::Px(16.), Val::Px(8.)),
+            Self::Medium => UiRect::axes(Val::Px(20.), Val::Px(12.)),
+            Self::Large => UiRect::axes(Val::Px(24.), Val::Px(16.)),
         }
     }
 }
@@ -89,10 +90,10 @@ pub enum ButtonRadius {
 
 impl ButtonRadius {
     /// Radius for each button radius in bevy_ui::BorderRadius
-    pub fn radius(&self) -> BorderRadius {
+    pub const fn radius(&self) -> BorderRadius {
         match self {
-            ButtonRadius::Default => BorderRadius::all(Val::Px(4.)),
-            ButtonRadius::Rounded => BorderRadius::MAX,
+            Self::Default => BorderRadius::all(Val::Px(4.)),
+            Self::Rounded => BorderRadius::MAX,
         }
     }
 }
@@ -118,46 +119,46 @@ enum SubInteraction {
 
 impl ButtonType {
     /// Default ont color for each button type
-    pub fn font_color(&self) -> Color {
+    pub const fn font_color(&self) -> Color {
         match self {
-            ButtonType::Primary => PRIMARY_TEXT_COLOR,
-            ButtonType::Secondary => SECONDARY_TEXT_COLOR,
-            ButtonType::Tertiary => TERTIARY_TEXT_COLOR,
+            Self::Primary => PRIMARY_TEXT_COLOR,
+            Self::Secondary => SECONDARY_TEXT_COLOR,
+            Self::Tertiary => TERTIARY_TEXT_COLOR,
         }
     }
 
-    fn border_width(&self, interaction: SubInteraction) -> UiRect {
+    const fn border_width(&self, interaction: SubInteraction) -> UiRect {
         match (self, interaction) {
-            (ButtonType::Secondary, SubInteraction::Hovered) => UiRect::all(Val::Px(4.)),
+            (Self::Secondary, SubInteraction::Hovered) => UiRect::all(Val::Px(4.)),
             _ => UiRect::all(Val::Px(1.)),
         }
     }
 
-    fn border_color(&self, interaction: SubInteraction) -> Color {
+    const fn border_color(&self, interaction: SubInteraction) -> Color {
         match (self, interaction) {
-            (ButtonType::Primary, SubInteraction::Default) => NORMAL_BUTTON,
-            (ButtonType::Primary, SubInteraction::Hovered) => HOVERED_BORDER,
-            (ButtonType::Primary, SubInteraction::Pressed) => PRESSED_BUTTON,
-            (ButtonType::Secondary, _) => SECONDARY_BORDER,
-            (ButtonType::Tertiary, SubInteraction::Default) => NORMAL_TER_BUTTON,
-            (ButtonType::Tertiary, SubInteraction::Hovered) => HOVERED_TER_BUTTON,
-            (ButtonType::Tertiary, SubInteraction::Pressed) => PRESSED_TER_BUTTON,
+            (Self::Primary, SubInteraction::Default) => NORMAL_BUTTON,
+            (Self::Primary, SubInteraction::Hovered) => HOVERED_BORDER,
+            (Self::Primary, SubInteraction::Pressed) => PRESSED_BUTTON,
+            (Self::Secondary, _) => SECONDARY_BORDER,
+            (Self::Tertiary, SubInteraction::Default) => NORMAL_TER_BUTTON,
+            (Self::Tertiary, SubInteraction::Hovered) => HOVERED_TER_BUTTON,
+            (Self::Tertiary, SubInteraction::Pressed) => PRESSED_TER_BUTTON,
             _ => DISABLED_BUTTON,
         }
     }
 
-    fn background_color(&self, interaction: SubInteraction) -> Color {
+    const fn background_color(&self, interaction: SubInteraction) -> Color {
         match (self, interaction) {
-            (ButtonType::Primary, SubInteraction::Default) => NORMAL_BUTTON,
-            (ButtonType::Secondary, SubInteraction::Default) => NORMAL_SEC_BUTTON,
-            (ButtonType::Tertiary, SubInteraction::Default) => NORMAL_TER_BUTTON,
-            (ButtonType::Primary, SubInteraction::Hovered) => HOVERED_BUTTON,
-            (ButtonType::Primary, SubInteraction::Pressed) => PRESSED_BUTTON,
-            (ButtonType::Primary, SubInteraction::Disabled) => DISABLED_BUTTON,
-            (ButtonType::Secondary, SubInteraction::Hovered) => HOVERED_SEC_BUTTON,
-            (ButtonType::Secondary, SubInteraction::Pressed) => PRESSED_SEC_BUTTON,
-            (ButtonType::Tertiary, SubInteraction::Hovered) => HOVERED_TER_BUTTON,
-            (ButtonType::Tertiary, SubInteraction::Pressed) => PRESSED_TER_BUTTON,
+            (Self::Primary, SubInteraction::Default) => NORMAL_BUTTON,
+            (Self::Secondary, SubInteraction::Default) => NORMAL_SEC_BUTTON,
+            (Self::Tertiary, SubInteraction::Default) => NORMAL_TER_BUTTON,
+            (Self::Primary, SubInteraction::Hovered) => HOVERED_BUTTON,
+            (Self::Primary, SubInteraction::Pressed) => PRESSED_BUTTON,
+            (Self::Primary, SubInteraction::Disabled) => DISABLED_BUTTON,
+            (Self::Secondary, SubInteraction::Hovered) => HOVERED_SEC_BUTTON,
+            (Self::Secondary, SubInteraction::Pressed) => PRESSED_SEC_BUTTON,
+            (Self::Tertiary, SubInteraction::Hovered) => HOVERED_TER_BUTTON,
+            (Self::Tertiary, SubInteraction::Pressed) => PRESSED_TER_BUTTON,
             _ => DISABLED_BUTTON,
         }
     }
@@ -188,23 +189,23 @@ pub(crate) fn button_system(
             *color = button_type
                 .background_color(SubInteraction::Disabled)
                 .into();
-            border_color.0 = button_type.border_color(SubInteraction::Disabled).into();
+            border_color.0 = button_type.border_color(SubInteraction::Disabled);
             style.border = button_type.border_width(SubInteraction::Disabled);
         } else {
             match *interaction {
                 Interaction::Pressed => {
                     *color = button_type.background_color(SubInteraction::Pressed).into();
-                    border_color.0 = button_type.border_color(SubInteraction::Pressed).into();
+                    border_color.0 = button_type.border_color(SubInteraction::Pressed);
                     style.border = button_type.border_width(SubInteraction::Pressed);
                 }
                 Interaction::Hovered => {
                     *color = button_type.background_color(SubInteraction::Hovered).into();
-                    border_color.0 = button_type.border_color(SubInteraction::Hovered).into();
+                    border_color.0 = button_type.border_color(SubInteraction::Hovered);
                     style.border = button_type.border_width(SubInteraction::Hovered);
                 }
                 Interaction::None => {
                     *color = button_type.background_color(SubInteraction::Default).into();
-                    border_color.0 = button_type.border_color(SubInteraction::Default).into();
+                    border_color.0 = button_type.border_color(SubInteraction::Default);
                     style.border = button_type.border_width(SubInteraction::Default);
                 }
             }
@@ -235,7 +236,7 @@ impl ButtonBuilder {
     /// - [`ButtonType::Primary`]
     /// - [`ButtonType::Secondary`]
     /// - [`ButtonType::Tertiary`]
-    pub fn with_type(mut self, button_type: ButtonType) -> Self {
+    pub const fn with_type(mut self, button_type: ButtonType) -> Self {
         self.button_type = button_type;
         self
     }
@@ -245,7 +246,7 @@ impl ButtonBuilder {
     /// - [`ButtonSize::Small`] - 20px
     /// - [`ButtonSize::Medium`] - 24px
     /// - [`ButtonSize::Large`] - 30px
-    pub fn with_size(mut self, button_size: ButtonSize) -> Self {
+    pub const fn with_size(mut self, button_size: ButtonSize) -> Self {
         self.button_size = button_size;
         self
     }
@@ -255,13 +256,13 @@ impl ButtonBuilder {
     /// - [`ButtonRadius::Default`] - 4px
     /// - [`ButtonRadius::Rounded`] - 100%
     ///
-    pub fn with_radius(mut self, button_radius: ButtonRadius) -> Self {
+    pub const fn with_radius(mut self, button_radius: ButtonRadius) -> Self {
         self.button_radius = button_radius;
         self
     }
 
-    /// Spawns button from the builder
-    pub fn build(self, commands: &mut Commands) {
+    /// Spawns button from the builder returning its entity id
+    pub fn build(self, commands: &mut Commands) -> Entity {
         commands
             .spawn(NodeBundle {
                 style: Style {
@@ -312,6 +313,6 @@ impl ButtonBuilder {
                             ));
                         }
                     });
-            });
+            }).id()
     }
 }

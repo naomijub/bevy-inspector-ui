@@ -1,3 +1,13 @@
+#![allow(
+    dead_code,
+    clippy::redundant_pub_crate,
+
+    // mandatory
+    clippy::needless_pass_by_ref_mut,
+    clippy::borrow_interior_mutable_const,
+    clippy::type_complexity,
+)]
+
 pub mod inspector_options;
 
 pub mod restricted_world_view;

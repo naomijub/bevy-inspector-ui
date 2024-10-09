@@ -102,7 +102,7 @@ where
     InspectorOptions: FromType<T>,
 {
     fn from_type() -> Self {
-        ReflectInspectorOptions(InspectorOptions::from_type())
+        Self(InspectorOptions::from_type())
     }
 }
 

@@ -57,17 +57,16 @@ pub mod guess_entity_name {
     /// Guesses an appropriate entity name like `Light (6)` or falls back to `Entity (8)`
     pub fn guess_entity_name(world: &World, entity: Entity) -> String {
         match world.get_entity(entity) {
-            Ok(entity_ref) => {
-                if let Some(name) = entity_ref.get::<Name>() {
-                    format!("{} ({})", name.as_str(), entity)
-                } else {
+            Ok(entity_ref) => entity_ref.get::<Name>().map_or_else(
+                || {
                     guess_entity_name_inner(
                         world.as_unsafe_world_cell_readonly(),
                         entity,
                         entity_ref.archetype(),
                     )
-                }
-            }
+                },
+                |name| format!("{} ({})", name.as_str(), entity),
+            ),
 
             Err(entity_err) => {
                 error!("Failed to get entity: {}", entity_err);

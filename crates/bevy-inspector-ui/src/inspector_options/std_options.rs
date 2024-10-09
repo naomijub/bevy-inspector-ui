@@ -63,8 +63,8 @@ pub enum NumberDisplay {
 }
 
 impl<T> NumberOptions<T> {
-    pub fn between(min: T, max: T) -> NumberOptions<T> {
-        NumberOptions {
+    pub fn between(min: T, max: T) -> Self {
+        Self {
             min: Some(min),
             max: Some(max),
             speed: 0.0,
@@ -73,8 +73,8 @@ impl<T> NumberOptions<T> {
             display: NumberDisplay::default(),
         }
     }
-    pub fn at_least(min: T) -> NumberOptions<T> {
-        NumberOptions {
+    pub fn at_least(min: T) -> Self {
+        Self {
             min: Some(min),
             max: None,
             speed: 0.0,
@@ -84,8 +84,8 @@ impl<T> NumberOptions<T> {
         }
     }
 
-    pub fn with_speed(self, speed: f32) -> NumberOptions<T> {
-        NumberOptions { speed, ..self }
+    pub fn with_speed(self, speed: f32) -> Self {
+        Self { speed, ..self }
     }
 
     pub fn map<U>(&self, f: impl Fn(&T) -> U) -> NumberOptions<U> {
@@ -102,8 +102,8 @@ impl<T> NumberOptions<T> {
 }
 
 impl<T: Numeric> NumberOptions<T> {
-    pub fn positive() -> NumberOptions<T> {
-        NumberOptions {
+    pub fn positive() -> Self {
+        Self {
             min: Some(T::from_f64(0.0)),
             max: None,
             speed: 0.0,
@@ -114,7 +114,7 @@ impl<T: Numeric> NumberOptions<T> {
     }
 
     pub fn normalized() -> Self {
-        NumberOptions {
+        Self {
             min: Some(T::from_f64(0.0)),
             max: Some(T::from_f64(1.0)),
             speed: 0.01,

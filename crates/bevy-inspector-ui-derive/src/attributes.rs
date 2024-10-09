@@ -23,17 +23,17 @@ pub enum InspectorAttribute {
 }
 
 impl InspectorAttribute {
-    pub fn lhs(&self) -> &syn::Member {
+    pub const fn lhs(&self) -> &syn::Member {
         match self {
-            InspectorAttribute::Assignment(member, _) => member,
-            InspectorAttribute::Tag(member) => member,
+            Self::Assignment(member, _) => member,
+            Self::Tag(member) => member,
         }
     }
 
     pub fn rhs(&self) -> TokenStream {
         match self {
-            InspectorAttribute::Assignment(_, expr) => quote! { #expr },
-            InspectorAttribute::Tag(_) => quote! { true },
+            Self::Assignment(_, expr) => quote! { #expr },
+            Self::Tag(_) => quote! { true },
         }
     }
 }
