@@ -19,9 +19,9 @@ impl Plugin for FocusPlugin {
         app.add_event::<GotFocus>();
         app.add_event::<LostFocus>();
 
-        app.observe(set_focus);
-        app.observe(clear_focus);
-        app.observe(mouse_click);
+        app.add_observer(set_focus);
+        app.add_observer(clear_focus);
+        app.add_observer(mouse_click);
 
         app.add_systems(
             Last,
@@ -113,7 +113,7 @@ fn mouse_click(
     if click.event().button != PointerButton::Primary {
         return;
     }
-    
+
     let entity = click.entity();
     if q_focusable.contains(entity) {
         commands.insert_resource(NeedClearFocus(false));

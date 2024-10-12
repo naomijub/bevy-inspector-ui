@@ -141,9 +141,7 @@ impl<'w> RestrictedWorldView<'w> {
     }
 
     /// Splits the world into one view which may only be used for resource access, and another which may only be used for component access.
-    pub fn resources_components(
-        world: &'w mut World,
-    ) -> (Self, Self) {
+    pub fn resources_components(world: &'w mut World) -> (Self, Self) {
         let world = world.as_unsafe_world_cell();
 
         // INVARIANTS: `world` is `&mut` so we have access to everything
@@ -197,9 +195,7 @@ impl<'w> RestrictedWorldView<'w> {
     }
 
     /// Like [`RestrictedWorldView::split_off_resource`], but takes `self` and returns `'w` lifetimes.
-    pub fn split_off_resource_typed<R: Resource>(
-        self,
-    ) -> Option<(Mut<'w, R>, Self)> {
+    pub fn split_off_resource_typed<R: Resource>(self) -> Option<(Mut<'w, R>, Self)> {
         let type_id = TypeId::of::<R>();
         assert!(self.allows_access_to_resource(type_id));
 
