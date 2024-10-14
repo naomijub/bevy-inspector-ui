@@ -11,6 +11,7 @@ use bevy_app::{App, Plugin, Update};
 use buttons::button_system;
 use clipboard::ClipboardPlugin;
 use focus::FocusPlugin;
+use text_field::TextFieldPlugin;
 
 pub mod buttons;
 pub mod clipboard;
@@ -24,7 +25,7 @@ impl Plugin for WidgetsPlugin {
     fn build(&self, app: &mut App) {
         app
             // Base/Transversal plugins
-            .add_plugins((ClipboardPlugin, FocusPlugin))
+            .add_plugins((ClipboardPlugin, FocusPlugin, TextFieldPlugin))
             .add_systems(Update, button_system);
     }
 }

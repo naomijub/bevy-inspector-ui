@@ -13,9 +13,22 @@ fn main() {
 fn setup(mut commands: Commands) {
     // ui camera
     commands.spawn(Camera2d);
-    TextFieldBuilder::default()
-        .with_hint_text("hint_text".to_string())
-        .with_label("label".to_string())
-        .with_placeholder("placeholder".to_string())
-        .build(&mut commands);
+    commands
+        .spawn(NodeBundle {
+            style: Style {
+                width: Val::Percent(100.),
+                height: Val::Percent(100.),
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
+                ..default()
+            },
+            ..default()
+        })
+        .with_children(|parent| {
+            TextFieldBuilder::default()
+                .with_hint_text("hint_text".to_string())
+                .with_label("label".to_string())
+                .with_placeholder("placeholder".to_string())
+                .child_build(parent);
+        });
 }
