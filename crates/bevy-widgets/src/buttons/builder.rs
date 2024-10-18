@@ -3,15 +3,23 @@ use std::{convert::Infallible, str::FromStr};
 use crate::buttons::constants::*;
 use bevy::prelude::*;
 
+/// A helper container for button text
+#[derive(Debug, Clone, Component, Reflect, PartialEq, Eq, Hash, Default)]
+#[reflect(Component)]
+pub struct ButtonsText(pub String);
+
 /// Buttons can be classified accordingly to their height:
 /// - small: height of 20px, padding of 16px x 8px, font size of 10px
 /// - medium: height of 24px, padding of 20px x 12px, font size of 10px
 /// - large: height of 30px, padding of 24px x 16px, font size of 13px
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum ButtonSize {
+    /// small: height of 20px, padding of 16px x 8px, font size of 10px
     Small,
     #[default]
+    /// medium: height of 24px, padding of 20px x 12px, font size of 10px. the default button size
     Medium,
+    /// large: height of 30px, padding of 24px x 16px, font size of 13px
     Large,
 }
 
@@ -49,8 +57,10 @@ impl ButtonSize {
 /// - rounded: radius of 100% (i.e. circle)
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ButtonRadius {
+    /// Border radius of 4px, soft square.
     #[default]
     Squared,
+    /// Border radius of 100%, completely round border
     Rounded,
 }
 
@@ -71,8 +81,11 @@ impl ButtonRadius {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Component)]
 pub enum ButtonType {
     #[default]
+    /// primary: text color is #F7F8F9 (white), background color is #307CB5 (blue).
     Primary,
+    /// secondary: text color is #4B4F53 (dark gray), background color is #ECF7FF (white)
     Secondary,
+    /// tertiary: text color is #F7F8F9 (white), background color is #1D496B (dark blue)
     Tertiary,
 }
 
@@ -222,6 +235,7 @@ impl ButtonBuilder {
     fn with_button(self, parent: &mut ChildBuilder<'_>) {
         parent
             .spawn((
+                ButtonsText(self.text.clone().unwrap_or_default()),
                 ButtonBundle {
                     style: Style {
                         width: self.width.unwrap_or(Val::Auto),
@@ -260,7 +274,7 @@ impl ButtonBuilder {
             });
     }
 
-    pub fn child_build(self, commands: &mut ChildBuilder) -> Entity {
+    pub(crate) fn child_build(self, commands: &mut ChildBuilder) -> Entity {
         commands
             .spawn(NodeBundle {
                 style: Style {

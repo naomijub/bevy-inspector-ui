@@ -2,6 +2,9 @@
     dead_code,
     clippy::redundant_pub_crate,
 
+    // remove
+    missing_docs,
+
     // mandatory
     clippy::needless_pass_by_ref_mut,
     clippy::borrow_interior_mutable_const,

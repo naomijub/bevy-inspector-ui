@@ -3,6 +3,7 @@ use bevy::app::{App, Plugin};
 use bevy::ecs::system::Resource;
 use bevy::prelude::{Deref, DerefMut};
 
+/// Plugin containing the copy+paste from clipboard
 pub struct ClipboardPlugin;
 
 impl Plugin for ClipboardPlugin {

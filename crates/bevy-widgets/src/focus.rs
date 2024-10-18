@@ -10,7 +10,9 @@ use bevy::picking::{
     pointer::PointerButton,
     prelude::{Click, Pointer},
 };
+use bevy::reflect::Reflect;
 
+/// Plugin containing the focus system logic
 pub struct FocusPlugin;
 
 impl Plugin for FocusPlugin {
@@ -36,32 +38,32 @@ impl Plugin for FocusPlugin {
 }
 
 /// Component which indicates that a widget has focus.
-#[derive(Component)]
+#[derive(Component, Reflect)]
 pub struct Focus;
 
 /// Mark that a widget can receive click input events to add focus
-#[derive(Component)]
+#[derive(Component, Reflect)]
 pub struct Clickable;
 
 /// Event indicating that a widget has received focus event due to click.
 /// - Needs manual implementation to react to this triggered event.
 /// > Only works automatically if the widget has the [`Clickable`] component
-#[derive(Event)]
+#[derive(Event, Reflect)]
 pub struct GotFocus(pub Option<Pointer<Click>>);
 
 /// Event indicating that a widget has lost focus due to focus or click somewhere else
 /// - Needs manual implementation to react to this triggered event
-#[derive(Event)]
+#[derive(Event, Reflect)]
 pub struct LostFocus;
 
 /// Set focus to a widget
 /// Event to be called with `commands.set_focus(entity)`
-#[derive(Event)]
+#[derive(Event, Reflect)]
 pub struct SetFocus;
 
 /// Remove focus from widgets
 /// Event to be called with `commands.clear_focus()`
-#[derive(Event)]
+#[derive(Event, Reflect)]
 pub struct ClearFocus;
 
 /// Extension trait for [`Commands`]

@@ -1,19 +1,21 @@
 use bevy::{asset::load_internal_binary_asset, ecs::system::SystemParam, prelude::*};
+use builder::{Placeholder, TextInputDescriptions, TextInputSize, TextInputState};
 use constants::CURSOR_HANDLE;
 use systems::*;
 
+/// Modelue containing auxiliary builder for text field widget
 pub mod builder;
-pub mod constants;
-pub mod systems;
+pub(crate) mod constants;
+mod systems;
 
 /// A Bevy `Plugin` providing the systems and assets required to make a [`TextInput`] work.
-pub struct TextFieldPlugin;
+pub struct TextInputPlugin;
 
 /// Label for systems that update text inputs.
 #[derive(Debug, PartialEq, Eq, Clone, Hash, SystemSet)]
 pub struct TextInputSystem;
 
-impl Plugin for TextFieldPlugin {
+impl Plugin for TextInputPlugin {
     fn build(&self, app: &mut App) {
         // This is a special font with a zero-width `|` glyph.
         load_internal_binary_asset!(
@@ -46,23 +48,47 @@ impl Plugin for TextFieldPlugin {
             .register_type::<TextInputCursorTimer>()
             .register_type::<TextInputInner>()
             .register_type::<TextInputValue>()
-            .register_type::<TextInputPlaceholder>()
+            .register_type::<TextInputState>()
+            .register_type::<TextInputDescriptions>()
+            .register_type::<Placeholder>()
+            .register_type::<TextInputSize>()
             .register_type::<TextInputCursorPos>();
     }
 }
 
 /// Marker component for a Text Input entity.
 ///
-/// Add this to a Bevy `NodeBundle`. In addition to its [required components](TextInput#impl-Component-for-TextInput), some other
-/// components may also be spawned with it: [`TextInputCursorPos`].
-///
-/// # Example
-///
+/// Should be added to a [`bevy::ui::NodeBundle`]:
 /// ```rust
 /// # use bevy::prelude::*;
-/// use bevy_simple_text_input::TextInput;
+/// # use bevy_widgets::{text_field::*, WidgetsPlugin};
 /// fn setup(mut commands: Commands) {
-///     commands.spawn((NodeBundle::default(), TextInput));
+///     commands
+///         .spawn(NodeBundle {
+///             style: Style {
+///                 width: Val::Percent(100.0),
+///                 height: Val::Percent(100.0),
+///                 align_items: AlignItems::Center,
+///                 justify_content: JustifyContent::Center,
+///                 ..default()
+///             },
+///             ..default()
+///         })
+///         .with_children(|parent| {
+///             parent.spawn((
+///                 NodeBundle {
+///                     style: Style {
+///                         height: Val::Px(50.0),
+///                         width: Val::Px(200.0),
+///                         border: UiRect::all(Val::Px(5.0)),
+///                         padding: UiRect::all(Val::Px(5.0)),
+///                         ..default()
+///                     },
+///                     ..default()
+///                 },
+///                 TextInput,
+///             ));
+///         });
 /// }
 /// ```
 #[derive(Component)]
@@ -73,22 +99,38 @@ impl Plugin for TextFieldPlugin {
     TextInputInactive,
     TextInputCursorTimer,
     TextInputValue,
-    TextInputPlaceholder,
+    TextInputState,
+    TextInputSize,
+    Placeholder,
+    TextInputDescriptions,
     Interaction
 )]
 pub struct TextInput;
 
-/// The Bevy `TextFont` that will be used when creating the text input's inner Bevy `TextBundle`.
+/// A wrapper for Bevy `TextFont` that will be used when creating the text input's inner Bevy `TextBundle`.
 #[derive(Component, Default, Reflect)]
 pub struct TextInputTextFont(pub TextFont);
 
-/// The Bevy `TextColor` that will be used when creating the text input's inner Bevy `TextBundle`.
+/// A wrapper for Bevy `TextColor` that will be used when creating the text input's inner Bevy `TextBundle`.
 #[derive(Component, Default, Reflect)]
 pub struct TextInputTextColor(pub TextColor);
 
 /// If true, the text input does not respond to keyboard events and the cursor is hidden.
+/// This is different than disabled, as the value can be changed on selecting
 #[derive(Component, Default, Reflect)]
-pub struct TextInputInactive(pub bool);
+pub struct TextInputInactive(pub(crate) bool);
+
+impl TextInputInactive {
+    /// Toggles the `TextInputInactive` component to be active
+    pub fn active(&mut self) {
+        self.0 = true;
+    }
+
+    /// Toggles the `TextInputInactive` component to be inactive
+    pub fn inactive(&mut self) {
+        self.0 = false;
+    }
+}
 
 /// A component that manages the cursor's blinking.
 #[derive(Component, Reflect)]
@@ -108,12 +150,21 @@ impl Default for TextInputCursorTimer {
 }
 
 /// A component containing the text input's settings.
-#[derive(Component, Default, Reflect)]
+#[derive(Component, Reflect)]
 pub struct TextInputSettings {
-    /// If true, text is not cleared after pressing enter.
+    /// If true, text is not cleared after pressing enter. Defaults to true.
     pub retain_on_submit: bool,
-    /// Mask text with the provided character.
+    /// Mask text with the provided character. Defaults to `None`, when calling `.password()` it defaults to `Some('*')`.
     pub mask_character: Option<char>,
+}
+
+impl Default for TextInputSettings {
+    fn default() -> Self {
+        Self {
+            retain_on_submit: true,
+            mask_character: None,
+        }
+    }
 }
 
 /// Text navigation actions that can be bound via `TextInputNavigationBindings`.
@@ -138,19 +189,20 @@ pub enum TextInputAction {
     /// Triggers a `TextInputSubmitEvent`, optionally clearing the text input.
     Submit,
 }
+
 /// A resource in which key bindings can be specified. Bindings are given as a tuple of (`TextInputAction`, `TextInputBinding`).
 ///
-/// All modifiers must be held when the primary key is pressed to perform the action.
+/// All modifiers must be held when the key is pressed to perform the action.
 /// The first matching action in the list will be performed, so a binding that is the same as another with additional
 /// modifier keys should be earlier in the vector to be applied.
 #[derive(Resource)]
 pub struct TextInputNavigationBindings(pub Vec<(TextInputAction, TextInputBinding)>);
 
-/// A combination of a key and required modifier keys that might trigger a `TextInputAction`.
+/// A combination of a key and required modifier that might trigger a `TextInputAction`.
 pub struct TextInputBinding {
-    /// Primary key
+    /// Key
     key: KeyCode,
-    /// Required modifier keys
+    /// Required modifier
     modifiers: Vec<KeyCode>,
 }
 
@@ -214,31 +266,20 @@ impl Default for TextInputNavigationBindings {
 
 /// A component containing the current value of the text input.
 #[derive(Component, Default, Reflect)]
-pub struct TextInputValue(pub String);
-
-/// A component containing the placeholder text that is displayed when the text input is empty and not focused.
-#[derive(Component, Default, Reflect)]
-pub struct TextInputPlaceholder {
-    /// The placeholder text.
-    pub value: String,
-    /// The color to use when rendering the placeholder text.
-    ///
-    /// If `None`, the text input color will be used with alpha value of `0.25`.
-    pub text_color: Option<TextColor>,
-}
+pub struct TextInputValue(pub(crate) String);
 
 #[derive(Component, Reflect)]
-pub struct TextInputPlaceholderInner;
+pub(crate) struct TextInputPlaceholderInner;
 
 /// A component containing the current text cursor position.
 #[derive(Component, Default, Reflect)]
-pub struct TextInputCursorPos(pub usize);
+pub struct TextInputCursorPos(pub(crate) usize);
 
 #[derive(Component, Reflect)]
-pub struct TextInputInner;
+pub(crate) struct TextInputInner;
 
 /// An event that is fired when the user presses the enter key.
-#[derive(Event)]
+#[derive(Event, Debug, Reflect)]
 pub struct TextInputSubmitEvent {
     /// The text input that triggered the event.
     pub entity: Entity,

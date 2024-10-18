@@ -1,13 +1,15 @@
 use bevy::prelude::*;
 
 use super::{
-    builder::{ButtonType, SubInteraction},
-    DisableButton,
+    builder::{ButtonType, ButtonsText, SubInteraction},
+    ButtonClickedEvent, DisableButton,
 };
 
 pub(crate) fn button_system(
     mut interaction_query: Query<
         (
+            Entity,
+            &ButtonsText,
             &Interaction,
             &mut BackgroundColor,
             &mut BorderColor,
@@ -17,9 +19,18 @@ pub(crate) fn button_system(
         ),
         (Changed<Interaction>, With<Button>),
     >,
+    mut event_writer: EventWriter<ButtonClickedEvent>,
 ) {
-    for (interaction, mut color, mut border_color, mut style, button_type, is_disabled) in
-        &mut interaction_query
+    for (
+        entity,
+        button_text,
+        interaction,
+        mut color,
+        mut border_color,
+        mut style,
+        button_type,
+        is_disabled,
+    ) in &mut interaction_query
     {
         if is_disabled.is_some() {
             *color = button_type
@@ -33,6 +44,10 @@ pub(crate) fn button_system(
                     *color = button_type.background_color(SubInteraction::Pressed).into();
                     border_color.0 = button_type.border_color(SubInteraction::Pressed);
                     style.border = button_type.border_width(SubInteraction::Pressed);
+                    event_writer.send(ButtonClickedEvent {
+                        entity,
+                        value: button_text.0.clone(),
+                    });
                 }
                 Interaction::Hovered => {
                     *color = button_type.background_color(SubInteraction::Hovered).into();

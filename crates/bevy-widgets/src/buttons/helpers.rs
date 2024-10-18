@@ -42,8 +42,12 @@ pub struct Default;
 /// - `spawn_button("text",(Primary, Medium, Squared))` or `spawn_button("text", Default)`: Default button.
 /// - `spawn_button("text",(Secondary, Rounded))`: Secondary rounded button.
 /// - `spawn_button("text",Large)`: Large primary squared button.
-///
 pub trait SpawnButton<T> {
+    /// Auxiliary function to spawn buttons:
+    /// There is a generic call order `(ButtonType, ButtonSize, ButtonRadius)`, so example calls are:
+    /// - `spawn_button("text",(Primary, Medium, Squared))` or `spawn_button("text", Default)`: Default button.
+    /// - `spawn_button("text",(Secondary, Rounded))`: Secondary rounded button.
+    /// - `spawn_button("text",Large)`: Large primary squared button.
     fn spawn_button(&mut self, text: impl Into<String>, _: T) -> Entity;
 }
 

@@ -9,7 +9,7 @@ use bevy::{
     window::{PrimaryWindow, WindowRef},
 };
 
-pub fn keyboard(
+pub(super) fn keyboard(
     key_input: Res<ButtonInput<KeyCode>>,
     input_events: Res<Events<KeyboardInput>>,
     mut input_reader: Local<EventCursor<KeyboardInput>>,
@@ -145,7 +145,7 @@ pub fn keyboard(
     input_reader.clear(&input_events);
 }
 
-pub fn update_value(
+pub(super) fn update_value(
     mut input_query: Query<
         (
             Entity,
@@ -184,7 +184,7 @@ pub fn update_value(
     }
 }
 
-pub fn scroll_with_cursor(
+pub(super) fn scroll_with_cursor(
     mut inner_text_query: Query<
         (
             &TextLayoutInfo,
@@ -278,7 +278,7 @@ pub fn scroll_with_cursor(
     }
 }
 
-pub fn create(
+pub(super) fn create(
     trigger: Trigger<OnAdd, TextInputValue>,
     mut commands: Commands,
     query: Query<(
@@ -289,7 +289,7 @@ pub fn create(
         Option<&TextInputCursorPos>,
         &TextInputInactive,
         &TextInputSettings,
-        &TextInputPlaceholder,
+        &Placeholder,
     )>,
 ) {
     if let Ok((
@@ -325,7 +325,7 @@ pub fn create(
                 TextInputInner,
             ))
             .with_children(|parent| {
-                parent.spawn((TextSpan::new(values.0), font.0.clone(), color.0.clone()));
+                parent.spawn((TextSpan::new(values.0), font.0.clone(), color.0));
 
                 parent.spawn((
                     TextSpan::new(values.1),
@@ -340,22 +340,17 @@ pub fn create(
                     },
                 ));
 
-                parent.spawn((TextSpan::new(values.2), font.0.clone(), color.0.clone()));
+                parent.spawn((TextSpan::new(values.2), font.0.clone(), color.0));
             })
             .id();
-
-        let placeholder_color = placeholder
-            .text_color
-            .clone()
-            .unwrap_or_else(|| placeholder_color(&color.0));
 
         let placeholder_visible = inactive.0 && text_input.0.is_empty();
 
         let placeholder_text = commands
             .spawn((
-                Text::new(&placeholder.value),
+                Text::new(&placeholder.0),
                 TextLayout::new_with_linebreak(LineBreak::NoWrap),
-                placeholder_color,
+                Placeholder::text_color(),
                 Name::new("TextInputPlaceholderInner"),
                 TextInputPlaceholderInner,
                 if placeholder_visible {
@@ -396,7 +391,7 @@ pub fn create(
 }
 
 // Shows or hides the cursor based on the text input's [`TextInputInactive`] property.
-pub fn show_hide_cursor(
+pub(super) fn show_hide_cursor(
     mut input_query: Query<
         (
             Entity,
@@ -425,7 +420,7 @@ pub fn show_hide_cursor(
 }
 
 // Blinks the cursor on a timer.
-pub fn blink_cursor(
+pub(super) fn blink_cursor(
     mut input_query: Query<(
         Entity,
         &TextInputTextColor,
@@ -468,7 +463,7 @@ pub fn blink_cursor(
     }
 }
 
-pub fn show_hide_placeholder(
+pub(super) fn show_hide_placeholder(
     input_query: Query<
         (&Children, &TextInputValue, &TextInputInactive),
         Or<(Changed<TextInputValue>, Changed<TextInputInactive>)>,
@@ -487,7 +482,7 @@ pub fn show_hide_placeholder(
     }
 }
 
-pub fn update_style(
+pub(super) fn update_style(
     mut input_query: Query<
         (
             Entity,
@@ -521,7 +516,7 @@ pub fn update_style(
     }
 }
 
-pub fn get_section_values(value: &str, cursor_pos: usize) -> (String, String, String) {
+pub(super) fn get_section_values(value: &str, cursor_pos: usize) -> (String, String, String) {
     let before = value.chars().take(cursor_pos).collect();
     let after = value.chars().skip(cursor_pos).collect();
 
@@ -535,7 +530,7 @@ pub fn get_section_values(value: &str, cursor_pos: usize) -> (String, String, St
     (before, cursor, after)
 }
 
-pub fn remove_char_at(input: &str, index: usize) -> String {
+pub(super) fn remove_char_at(input: &str, index: usize) -> String {
     input
         .chars()
         .enumerate()
@@ -543,7 +538,7 @@ pub fn remove_char_at(input: &str, index: usize) -> String {
         .collect()
 }
 
-pub fn byte_pos(input: &str, char_pos: usize) -> usize {
+pub(super) fn byte_pos(input: &str, char_pos: usize) -> usize {
     let mut char_indices = input.char_indices();
     char_indices
         .nth(char_pos)
@@ -551,14 +546,14 @@ pub fn byte_pos(input: &str, char_pos: usize) -> usize {
         .unwrap_or(input.len())
 }
 
-pub fn masked_value(value: &str, mask: Option<char>) -> String {
+pub(super) fn masked_value(value: &str, mask: Option<char>) -> String {
     mask.map_or_else(
         || value.to_string(),
         |c| value.chars().map(|_| c).collect::<String>(),
     )
 }
 
-pub fn placeholder_color(color: &TextColor) -> TextColor {
+pub(super) fn placeholder_color(color: &TextColor) -> TextColor {
     let color = color.with_alpha(color.alpha() * 0.25);
     TextColor(color)
 }

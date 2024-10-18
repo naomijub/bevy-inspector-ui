@@ -1,8 +1,7 @@
+#![allow(missing_docs)]
 use bevy::{prelude::*, winit::WinitSettings};
 use bevy_widgets::{text_field::*, WidgetsPlugin};
-
-const BORDER_COLOR_ACTIVE: Color = Color::srgb(0.75, 0.52, 0.99);
-const BACKGROUND_COLOR: Color = Color::srgb(0.0, 0.0, 0.5);
+use builder::TextInputBuilder;
 
 fn main() {
     App::new()
@@ -29,22 +28,12 @@ fn setup(mut commands: Commands) {
             ..default()
         })
         .with_children(|parent| {
-            parent.spawn((
-                NodeBundle {
-                    style: Style {
-                        height: Val::Px(50.0),
-                        width: Val::Px(200.0),
-                        border: UiRect::all(Val::Px(5.0)),
-                        padding: UiRect::all(Val::Px(5.0)),
-                        ..default()
-                    },
-                    border_color: BORDER_COLOR_ACTIVE.into(),
-                    background_color: BACKGROUND_COLOR.into(),
-                    ..default()
-                },
-                TextInput,
-                TextInputTextColor(Color::WHITE.into()),
-            ));
+            parent.spawn(
+                TextInputBuilder::default()
+                    .with_placeholder("placeholder".to_string())
+                    .clear_on_submit()
+                    .build(),
+            );
         });
 }
 

@@ -31,7 +31,7 @@ type EntityComponent = (Entity, TypeId);
 /// ```no_run
 /// use bevy_ecs::prelude::*;
 /// use std::any::TypeId;
-/// use bevy_inspector_egui::restricted_world_view::RestrictedWorldView;
+/// use bevy_inspector_ui::restricted_world_view::RestrictedWorldView;
 /// # use bevy_asset::Assets;
 /// # use bevy_pbr::StandardMaterial;
 ///
