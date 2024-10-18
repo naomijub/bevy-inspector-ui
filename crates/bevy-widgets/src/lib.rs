@@ -7,15 +7,14 @@
     clippy::borrow_interior_mutable_const,
     clippy::type_complexity,
 )]
-use bevy_app::{App, Plugin, Update};
-use buttons::button_system;
+use bevy::app::{App, Plugin, Update};
+use buttons::systems::button_system;
 use clipboard::ClipboardPlugin;
 use focus::FocusPlugin;
 use text_field::TextFieldPlugin;
 
 pub mod buttons;
 pub mod clipboard;
-pub mod cursor;
 pub mod focus;
 pub mod text_field;
 

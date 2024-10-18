@@ -1,9 +1,6 @@
 use bevy::{prelude::*, winit::WinitSettings};
 use bevy_widgets::{
-    buttons::{
-        prelude::{self as button, SpawnButton},
-        ButtonRadius, ButtonSize, ButtonType,
-    },
+    buttons::prelude::{self as button, ButtonRadius, ButtonSize, ButtonType, SpawnButton},
     WidgetsPlugin,
 };
 

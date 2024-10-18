@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use bevy::{prelude::*, winit::WinitSettings};
 use bevy_widgets::{
-    buttons::{ButtonBuilder, ButtonRadius, ButtonSize, ButtonType},
+    buttons::prelude::{ButtonBuilder, ButtonRadius, ButtonSize, ButtonType},
     WidgetsPlugin,
 };
 

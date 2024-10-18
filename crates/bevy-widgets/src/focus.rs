@@ -1,12 +1,12 @@
-use bevy_app::{App, Plugin};
-use bevy_ecs::{
+use bevy::app::{App, Plugin};
+use bevy::ecs::{
     observer::Trigger,
     prelude::{Component, Entity, Event, Resource},
     query::With,
     system::{Commands, Query},
 };
-use bevy_input::ButtonInput;
-use bevy_picking::{
+use bevy::input::ButtonInput;
+use bevy::picking::{
     pointer::PointerButton,
     prelude::{Click, Pointer},
 };
@@ -21,10 +21,10 @@ impl Plugin for FocusPlugin {
             .add_event::<LostFocus>();
 
         app.add_systems(
-            bevy_app::Update,
+            bevy::app::Update,
             |mut commands: Commands,
-             input: bevy_ecs::system::Res<ButtonInput<bevy_input::keyboard::KeyCode>>| {
-                if input.just_pressed(bevy_input::keyboard::KeyCode::Escape) {
+             input: bevy::ecs::system::Res<ButtonInput<bevy::input::keyboard::KeyCode>>| {
+                if input.just_pressed(bevy::input::keyboard::KeyCode::Escape) {
                     commands.trigger_targets(ClearFocus, Entity::PLACEHOLDER);
                 }
             },

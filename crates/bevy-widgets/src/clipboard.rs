@@ -1,7 +1,7 @@
 use arboard::Clipboard;
-use bevy_app::{App, Plugin};
-use bevy_derive::{Deref, DerefMut};
-use bevy_ecs::system::Resource;
+use bevy::app::{App, Plugin};
+use bevy::ecs::system::Resource;
+use bevy::prelude::{Deref, DerefMut};
 
 pub struct ClipboardPlugin;
 
