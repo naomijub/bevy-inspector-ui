@@ -5,7 +5,7 @@ use bevy::{
     input::keyboard::{Key, KeyboardInput},
     render::camera::RenderTarget,
     text::TextLayoutInfo,
-    ui::{widget::TextUiWriter as UiTextWriter, FocusPolicy},
+    ui::FocusPolicy,
     window::{PrimaryWindow, WindowRef},
 };
 
@@ -156,7 +156,7 @@ pub fn update_value(
         Or<(Changed<TextInputValue>, Changed<TextInputCursorPos>)>,
     >,
     inner_text: InnerText,
-    mut writer: UiTextWriter,
+    mut writer: TextUiWriter,
 ) {
     for (entity, text_input, settings, mut cursor_pos) in &mut input_query {
         let Some(inner) = inner_text.inner_entity(entity) else {
@@ -407,7 +407,7 @@ pub fn show_hide_cursor(
         Changed<TextInputInactive>,
     >,
     inner_text: InnerText,
-    mut writer: UiTextWriter,
+    mut writer: TextUiWriter,
 ) {
     for (entity, color, mut cursor_timer, inactive) in &mut input_query {
         let Some(inner) = inner_text.inner_entity(entity) else {
@@ -433,7 +433,7 @@ pub fn blink_cursor(
         Ref<TextInputInactive>,
     )>,
     inner_text: InnerText,
-    mut writer: UiTextWriter,
+    mut writer: TextUiWriter,
     time: Res<Time>,
 ) {
     for (entity, color, mut cursor_timer, inactive) in &mut input_query {
@@ -498,7 +498,7 @@ pub fn update_style(
         (Changed<TextInputTextFont>, Changed<TextInputTextColor>),
     >,
     inner_text: InnerText,
-    mut writer: UiTextWriter,
+    mut writer: TextUiWriter,
 ) {
     for (entity, font, color, inactive) in &mut input_query {
         let Some(inner) = inner_text.inner_entity(entity) else {

@@ -42,7 +42,8 @@ fn setup(mut commands: Commands) {
                     background_color: BACKGROUND_COLOR.into(),
                     ..default()
                 },
-                TextInput, TextInputTextColor(Color::WHITE.into()),
+                TextInput,
+                TextInputTextColor(Color::WHITE.into()),
             ));
         });
 }

@@ -3,13 +3,19 @@ name = "bevy-widgets"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+default = ["x11"]
+x11 = ["bevy/x11"]
+wayland = ["bevy/wayland"]
+
 [dependencies]
 bevy = { git = "https://github.com/bevyengine/bevy", rev = "b4e04f9d9f4e5954b07514db893b7b54367bce44", default-features = false, features = [
-    "bevy_render",
     "bevy_ui",
     "bevy_text",
     "bevy_asset",
-    "bevy_winit",
 ]}
 
 arboard = {version = "3.4.1", features = ["image-data"] }
+
+[dev-dependencies]
+bevy = { git = "https://github.com/bevyengine/bevy", rev = "b4e04f9d9f4e5954b07514db893b7b54367bce44", default-features = true }
