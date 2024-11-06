@@ -9,7 +9,7 @@ x11 = ["bevy/x11"]
 wayland = ["bevy/wayland"]
 
 [dependencies]
-bevy = { git = "https://github.com/bevyengine/bevy", rev = "b4e04f9d9f4e5954b07514db893b7b54367bce44", default-features = false, features = [
+bevy = { version = "0.15.0-rc.3", default-features = false, features = [
     "bevy_ui",
     "bevy_text",
     "bevy_asset",
@@ -18,4 +18,4 @@ bevy = { git = "https://github.com/bevyengine/bevy", rev = "b4e04f9d9f4e5954b075
 arboard = {version = "3.4.1", features = ["image-data"] }
 
 [dev-dependencies]
-bevy = { git = "https://github.com/bevyengine/bevy", rev = "b4e04f9d9f4e5954b07514db893b7b54367bce44", default-features = true }
+bevy = { version = "0.15.0-rc.3", default-features = true }

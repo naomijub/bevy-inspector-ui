@@ -1,6 +1,6 @@
 use std::{convert::Infallible, str::FromStr};
 
-use crate::buttons::constants::*;
+use crate::{buttons::constants::*, focus::Clickable};
 use bevy::prelude::*;
 
 /// A helper container for button text
@@ -94,6 +94,7 @@ pub(crate) enum SubInteraction {
     Hovered,
     Pressed,
     Disabled,
+    Focus,
 }
 
 impl ButtonType {
@@ -118,10 +119,13 @@ impl ButtonType {
             (Self::Primary, SubInteraction::Default) => NORMAL_BUTTON,
             (Self::Primary, SubInteraction::Hovered) => HOVERED_BORDER,
             (Self::Primary, SubInteraction::Pressed) => PRESSED_BUTTON,
+            (Self::Primary, SubInteraction::Focus) => FOCUS_BORDER_BUTTON,
+            (Self::Secondary, SubInteraction::Focus) => FOCUS_BORDER_SEC_BUTTON,
             (Self::Secondary, _) => SECONDARY_BORDER,
             (Self::Tertiary, SubInteraction::Default) => NORMAL_TER_BUTTON,
             (Self::Tertiary, SubInteraction::Hovered) => HOVERED_TER_BUTTON,
             (Self::Tertiary, SubInteraction::Pressed) => PRESSED_TER_BUTTON,
+            (Self::Tertiary, SubInteraction::Focus) => FOCUS_BORDER_TER_BUTTON,
             _ => DISABLED_BUTTON,
         }
     }
@@ -131,6 +135,9 @@ impl ButtonType {
             (Self::Primary, SubInteraction::Default) => NORMAL_BUTTON,
             (Self::Secondary, SubInteraction::Default) => NORMAL_SEC_BUTTON,
             (Self::Tertiary, SubInteraction::Default) => NORMAL_TER_BUTTON,
+            (Self::Primary, SubInteraction::Focus) => FOCUS_BG_BUTTON,
+            (Self::Secondary, SubInteraction::Focus) => FOCUS_BG_SEC_BUTTON,
+            (Self::Tertiary, SubInteraction::Focus) => FOCUS_BG_TER_BUTTON,
             (Self::Primary, SubInteraction::Hovered) => HOVERED_BUTTON,
             (Self::Primary, SubInteraction::Pressed) => PRESSED_BUTTON,
             (Self::Primary, SubInteraction::Disabled) => DISABLED_BUTTON,
@@ -215,15 +222,12 @@ impl ButtonBuilder {
     /// Spawns button from the builder returning its entity id
     pub fn build(self, commands: &mut Commands) -> Entity {
         commands
-            .spawn(NodeBundle {
-                style: Style {
-                    width: Val::Percent(100.0),
-                    height: Val::Percent(100.0),
-                    align_items: AlignItems::Center,
-                    justify_content: JustifyContent::Center,
-                    position_type: PositionType::Relative,
-                    ..default()
-                },
+            .spawn(Node {
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
+                position_type: PositionType::Relative,
                 ..default()
             })
             .with_children(|parent| {
@@ -235,28 +239,23 @@ impl ButtonBuilder {
     fn with_button(self, parent: &mut ChildBuilder<'_>) {
         parent
             .spawn((
+                Clickable,
                 ButtonsText(self.text.clone().unwrap_or_default()),
-                ButtonBundle {
-                    style: Style {
-                        width: self.width.unwrap_or(Val::Auto),
-                        height: self.button_size.height(),
-                        border: UiRect::all(Val::Px(1.0)),
-                        justify_content: JustifyContent::Center,
-                        align_items: AlignItems::Center,
-                        padding: self.button_size.padding(),
-                        ..default()
-                    },
-                    border_color: self
-                        .button_type
-                        .border_color(SubInteraction::Default)
-                        .into(),
-                    border_radius: self.button_radius.radius(),
-                    background_color: self
-                        .button_type
-                        .background_color(SubInteraction::Default)
-                        .into(),
+                Button,
+                Node {
+                    width: self.width.unwrap_or(Val::Auto),
+                    height: self.button_size.height(),
+                    border: UiRect::all(Val::Px(1.0)),
+                    justify_content: JustifyContent::Center,
+                    align_items: AlignItems::Center,
+                    padding: self.button_size.padding(),
                     ..default()
                 },
+                Into::<BorderColor>::into(self.button_type.border_color(SubInteraction::Default)),
+                self.button_radius.radius(),
+                Into::<BackgroundColor>::into(
+                    self.button_type.background_color(SubInteraction::Default),
+                ),
                 self.button_type,
             ))
             .with_children(|parent| {
@@ -276,15 +275,12 @@ impl ButtonBuilder {
 
     pub(crate) fn child_build(self, commands: &mut ChildBuilder) -> Entity {
         commands
-            .spawn(NodeBundle {
-                style: Style {
-                    width: Val::Percent(100.0),
-                    height: Val::Percent(100.0),
-                    align_items: AlignItems::Center,
-                    justify_content: JustifyContent::Center,
-                    position_type: PositionType::Relative,
-                    ..default()
-                },
+            .spawn(Node {
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
+                position_type: PositionType::Relative,
                 ..default()
             })
             .with_children(|parent| {

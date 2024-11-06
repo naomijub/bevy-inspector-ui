@@ -1,7 +1,7 @@
 use bevy::app::{App, Plugin};
 use bevy::ecs::{
     observer::Trigger,
-    prelude::{Component, Entity, Event, Resource},
+    prelude::{Component, Entity, Event},
     query::With,
     system::{Commands, Query},
 };
@@ -42,7 +42,7 @@ impl Plugin for FocusPlugin {
 pub struct Focus;
 
 /// Mark that a widget can receive click input events to add focus
-#[derive(Component, Reflect)]
+#[derive(Component, Reflect, Default)]
 pub struct Clickable;
 
 /// Event indicating that a widget has received focus event due to click.
@@ -85,9 +85,6 @@ impl FocusExt for Commands<'_, '_> {
         self.trigger(ClearFocus);
     }
 }
-
-#[derive(Resource)]
-struct NeedClearFocus(bool);
 
 fn set_focus(
     trigger: Trigger<SetFocus>,

@@ -22,8 +22,8 @@ fn setup(mut commands: Commands) {
     commands.spawn_button("text", button::Default);
 
     commands
-        .spawn(NodeBundle {
-            style: Style {
+        .spawn((
+            Node {
                 // fill the entire window
                 width: Val::Percent(100.),
                 height: Val::Percent(100.),
@@ -33,19 +33,15 @@ fn setup(mut commands: Commands) {
                 row_gap: MARGIN,
                 ..Default::default()
             },
-            background_color: BackgroundColor(Color::BLACK),
-            ..Default::default()
-        })
+            BackgroundColor(Color::BLACK),
+        ))
         .with_children(|builder| {
             builder
-                .spawn(NodeBundle {
-                    style: Style {
-                        width: Val::Percent(100.),
-                        height: Val::Percent(100.),
-                        flex_direction: FlexDirection::Column,
-                        row_gap: MARGIN,
-                        ..Default::default()
-                    },
+                .spawn(Node {
+                    width: Val::Percent(100.),
+                    height: Val::Percent(100.),
+                    flex_direction: FlexDirection::Column,
+                    row_gap: MARGIN,
                     ..Default::default()
                 })
                 .with_children(|builder| {
@@ -61,14 +57,11 @@ fn setup(mut commands: Commands) {
                     let sizes = [ButtonSize::Small, ButtonSize::Medium, ButtonSize::Large];
                     for sizes in sizes {
                         builder
-                            .spawn(NodeBundle {
-                                style: Style {
-                                    width: Val::Percent(100.),
-                                    height: Val::Percent(100.),
-                                    flex_direction: FlexDirection::Row,
-                                    column_gap: MARGIN,
-                                    ..Default::default()
-                                },
+                            .spawn(Node {
+                                width: Val::Percent(100.),
+                                height: Val::Percent(100.),
+                                flex_direction: FlexDirection::Row,
+                                column_gap: MARGIN,
                                 ..Default::default()
                             })
                             .with_children(|builder| {
@@ -83,8 +76,8 @@ fn setup(mut commands: Commands) {
 
 fn spawn_new_button(builder: &mut ChildBuilder, size: &ButtonSize, ty: (ButtonType, ButtonRadius)) {
     builder
-        .spawn(NodeBundle {
-            style: Style {
+        .spawn((
+            Node {
                 flex_direction: FlexDirection::Column,
                 align_items: AlignItems::Center,
                 justify_content: JustifyContent::Center,
@@ -92,9 +85,8 @@ fn spawn_new_button(builder: &mut ChildBuilder, size: &ButtonSize, ty: (ButtonTy
                 height: Val::Percent(100.),
                 ..Default::default()
             },
-            background_color: BackgroundColor(Color::srgb(0.25, 0.25, 0.25)),
-            ..Default::default()
-        })
+            BackgroundColor(Color::srgb(0.25, 0.25, 0.25)),
+        ))
         .with_children(|builder| match (size, ty.0, ty.1) {
             (ButtonSize::Small, ButtonType::Primary, ButtonRadius::Squared) => {
                 builder.spawn_button(

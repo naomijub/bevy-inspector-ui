@@ -1,3 +1,5 @@
+use crate::focus::Focus;
+
 use super::constants::CURSOR_HANDLE;
 use super::*;
 use bevy::{
@@ -7,6 +9,12 @@ use bevy::{
     text::TextLayoutInfo,
     ui::FocusPolicy,
     window::{PrimaryWindow, WindowRef},
+};
+
+use constants::{
+    DEFAULT_BACKGROUND_COLOR, DISABLED_BACKGROUND_COLOR, ERROR_BACKGROUND_COLOR,
+    ERROR_BORDER_COLOR, SELECTED_BACKGROUND_COLOR, SELECTED_BORDER_COLOR, WARNING_BACKGROUND_COLOR,
+    WARNING_BORDER_COLOR,
 };
 
 pub(super) fn keyboard(
@@ -186,22 +194,16 @@ pub(super) fn update_value(
 
 pub(super) fn scroll_with_cursor(
     mut inner_text_query: Query<
-        (
-            &TextLayoutInfo,
-            &mut Style,
-            &Node,
-            &Parent,
-            Option<&TargetCamera>,
-        ),
+        (&TextLayoutInfo, &mut Node, &Parent, Option<&TargetCamera>),
         (With<TextInputInner>, Changed<TextLayoutInfo>),
     >,
-    mut style_query: Query<(&Node, &mut Style), Without<TextInputInner>>,
+    mut style_query: Query<&mut Node, Without<TextInputInner>>,
     camera_query: Query<&Camera>,
     window_query: Query<&Window>,
     primary_window_query: Query<&Window, With<PrimaryWindow>>,
 ) {
-    for (layout, mut style, child_node, parent, target_camera) in inner_text_query.iter_mut() {
-        let Ok((parent_node, mut parent_style)) = style_query.get_mut(parent.get()) else {
+    for (layout, mut child_style, parent, target_camera) in inner_text_query.iter_mut() {
+        let Ok(mut parent_node) = style_query.get_mut(parent.get()) else {
             continue;
         };
 
@@ -210,16 +212,16 @@ pub(super) fn scroll_with_cursor(
             None => return,
             // if cursor is at the end, position at FlexEnd so newly typed text does not take a frame to move into view
             Some(1) => {
-                style.left = Val::Auto;
-                parent_style.justify_content = JustifyContent::FlexEnd;
+                child_style.left = Val::Auto;
+                parent_node.justify_content = JustifyContent::FlexEnd;
                 return;
             }
             _ => (),
         }
 
         // if cursor is in the middle, we use FlexStart + `left` px for consistent behaviour when typing the middle
-        let child_size = child_node.size().x;
-        let parent_size = parent_node.size().x;
+        let child_size = child_style.width;
+        let parent_size = parent_node.width;
 
         let Some(cursor_pos) = layout
             .glyphs
@@ -262,18 +264,23 @@ pub(super) fn scroll_with_cursor(
         };
         let cursor_pos = cursor_pos / scale_factor;
 
-        let box_pos = match style.left {
+        let box_pos = match child_style.left {
             Val::Px(px) => -px,
-            _ => child_size - parent_size,
+            _ => match (child_size, parent_size) {
+                (Val::Px(child), Val::Px(parent)) => child - parent,
+                _ => 0.,
+            },
         };
 
         let relative_pos = cursor_pos - box_pos;
 
-        if relative_pos < 0.0 || relative_pos > parent_size {
-            let req_px = parent_size * 0.5 - cursor_pos;
-            let req_px = req_px.clamp(parent_size - child_size, 0.0);
-            style.left = Val::Px(req_px);
-            parent_style.justify_content = JustifyContent::FlexStart;
+        if let (Val::Px(parent_size), Val::Px(child_size)) = (parent_size, child_size) {
+            if relative_pos < 0.0 || relative_pos > parent_size {
+                let req_px = parent_size.mul_add(0.5, -cursor_pos);
+                let req_px = req_px.clamp(parent_size - child_size, 0.0);
+                child_style.left = Val::Px(req_px);
+                parent_node.justify_content = JustifyContent::FlexStart;
+            }
         }
     }
 }
@@ -290,6 +297,7 @@ pub(super) fn create(
         &TextInputInactive,
         &TextInputSettings,
         &Placeholder,
+        &TextInputSize,
     )>,
 ) {
     if let Ok((
@@ -301,8 +309,11 @@ pub(super) fn create(
         inactive,
         settings,
         placeholder,
+        text_input_size,
     )) = &query.get(trigger.entity())
     {
+        #[allow(clippy::option_if_let_else)]
+        // Internal mutation
         let cursor_pos = match maybe_cursor_pos {
             None => {
                 let len = text_input.0.len();
@@ -351,6 +362,7 @@ pub(super) fn create(
                 Text::new(&placeholder.0),
                 TextLayout::new_with_linebreak(LineBreak::NoWrap),
                 Placeholder::text_color(),
+                Placeholder::text_font(text_input_size),
                 Name::new("TextInputPlaceholderInner"),
                 TextInputPlaceholderInner,
                 if placeholder_visible {
@@ -358,7 +370,7 @@ pub(super) fn create(
                 } else {
                     Visibility::Hidden
                 },
-                Style {
+                Node {
                     position_type: PositionType::Absolute,
                     ..default()
                 },
@@ -367,13 +379,10 @@ pub(super) fn create(
 
         let overflow_container = commands
             .spawn((
-                NodeBundle {
-                    style: Style {
-                        overflow: Overflow::clip(),
-                        justify_content: JustifyContent::FlexEnd,
-                        max_width: Val::Percent(100.),
-                        ..default()
-                    },
+                Node {
+                    overflow: Overflow::clip(),
+                    justify_content: JustifyContent::FlexEnd,
+                    max_width: Val::Percent(100.),
                     ..default()
                 },
                 Name::new("TextInputOverflowContainer"),
@@ -556,4 +565,71 @@ pub(super) fn masked_value(value: &str, mask: Option<char>) -> String {
 pub(super) fn placeholder_color(color: &TextColor) -> TextColor {
     let color = color.with_alpha(color.alpha() * 0.25);
     TextColor(color)
+}
+
+pub(super) fn on_add_focus(
+    trigger: Trigger<OnAdd, Focus>,
+    mut commands: Commands,
+    mut interaction_query: Query<(&mut TextInputInactive, &mut TextInputState), With<TextInput>>,
+) {
+    let entity = trigger.entity();
+    if let Ok((mut inactive, mut state)) = interaction_query.get_mut(entity) {
+        inactive.active();
+        *state = TextInputState::Selected;
+    } else {
+        commands.entity(entity).remove::<Focus>();
+    }
+}
+
+pub(super) fn on_remove_focus(
+    trigger: Trigger<OnRemove, Focus>,
+    mut commands: Commands,
+    mut interaction_query: Query<(&mut TextInputInactive, &mut TextInputState), With<TextInput>>,
+) {
+    let entity = trigger.entity();
+    if let Ok((mut inactive, mut state)) = interaction_query.get_mut(entity) {
+        inactive.inactive();
+        *state = TextInputState::Default;
+    } else {
+        commands.entity(entity).remove::<Focus>();
+    }
+}
+
+pub(super) fn on_state_changed(
+    mut interaction_query: Query<
+        (
+            &TextInputInactive,
+            &TextInputState,
+            &mut BackgroundColor,
+            &mut BorderColor,
+            // AnyOf<(&DisableTextInput, &WarningTextInput, &ErrorTextInput)>
+        ),
+        (Changed<TextInputState>, With<TextInput>),
+    >,
+) {
+    for (inactive, state, mut bg, mut border) in &mut interaction_query {
+        match (state, inactive.0) {
+            (TextInputState::Default, true) => {
+                *bg = DEFAULT_BACKGROUND_COLOR.into();
+                *border = DEFAULT_BACKGROUND_COLOR.into();
+            }
+            (TextInputState::Selected, false) => {
+                *bg = SELECTED_BACKGROUND_COLOR.into();
+                *border = SELECTED_BORDER_COLOR.into();
+            }
+            (TextInputState::Warning, _) => {
+                *bg = WARNING_BACKGROUND_COLOR.into();
+                *border = WARNING_BORDER_COLOR.into();
+            }
+            (TextInputState::Error, _) => {
+                *bg = ERROR_BACKGROUND_COLOR.into();
+                *border = ERROR_BORDER_COLOR.into();
+            }
+            (TextInputState::Disabled, _) => {
+                *bg = DISABLED_BACKGROUND_COLOR.into();
+                *border = DISABLED_BACKGROUND_COLOR.into();
+            }
+            _ => {}
+        }
+    }
 }

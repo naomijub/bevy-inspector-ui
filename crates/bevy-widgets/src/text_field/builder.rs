@@ -35,7 +35,7 @@ impl TextInputSize {
     }
 
     /// Default [`TextColor`] component
-    pub fn default_text_color(&self) -> TextColor {
+    pub const fn default_text_color(&self) -> TextColor {
         TextColor(DEFAULT_FONT_COLOR)
     }
 
@@ -213,7 +213,10 @@ impl TextInputBuilder {
         self,
     ) -> (
         TextInput,
-        NodeBundle,
+        Node,
+        BorderColor,
+        BackgroundColor,
+        BorderRadius,
         TextInputSettings,
         TextInputTextColor,
         TextInputTextFont,
@@ -238,19 +241,16 @@ impl TextInputBuilder {
 
         (
             TextInput,
-            NodeBundle {
-                style: Style {
-                    height: Val::Px(self.size.height()),
-                    min_width: Val::Px(self.size.min_width()),
-                    border: UiRect::all(Val::Px(2.0)),
-                    padding: self.size.padding(),
-                    ..default()
-                },
-                border_color: TextInputState::Default.border_color().into(),
-                background_color: TextInputState::Default.background_color().into(),
-                border_radius: BorderRadius::all(Val::Px(8.0)),
+            Node {
+                height: Val::Px(self.size.height()),
+                min_width: Val::Px(self.size.min_width()),
+                border: UiRect::all(Val::Px(2.0)),
+                padding: self.size.padding(),
                 ..default()
             },
+            TextInputState::Default.border_color().into(),
+            TextInputState::Default.background_color().into(),
+            BorderRadius::all(Val::Px(8.0)),
             settings,
             color,
             font,

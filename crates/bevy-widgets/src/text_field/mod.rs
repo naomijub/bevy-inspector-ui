@@ -3,6 +3,8 @@ use builder::{Placeholder, TextInputDescriptions, TextInputSize, TextInputState}
 use constants::CURSOR_HANDLE;
 use systems::*;
 
+use crate::focus::Clickable;
+
 /// Modelue containing auxiliary builder for text field widget
 pub mod builder;
 pub(crate) mod constants;
@@ -28,6 +30,8 @@ impl Plugin for TextInputPlugin {
         app.init_resource::<TextInputNavigationBindings>()
             .add_event::<TextInputSubmitEvent>()
             .add_observer(create)
+            .add_observer(on_add_focus)
+            .add_observer(on_remove_focus)
             .add_systems(
                 Update,
                 (
@@ -41,6 +45,7 @@ impl Plugin for TextInputPlugin {
                 )
                     .in_set(TextInputSystem),
             )
+            .add_systems(Update, on_state_changed)
             .register_type::<TextInputSettings>()
             .register_type::<TextInputTextColor>()
             .register_type::<TextInputTextFont>()
@@ -102,6 +107,7 @@ impl Plugin for TextInputPlugin {
     TextInputState,
     TextInputSize,
     Placeholder,
+    Clickable,
     TextInputDescriptions,
     Interaction
 )]
@@ -123,12 +129,12 @@ pub struct TextInputInactive(pub(crate) bool);
 impl TextInputInactive {
     /// Toggles the `TextInputInactive` component to be active
     pub fn active(&mut self) {
-        self.0 = true;
+        self.0 = false;
     }
 
     /// Toggles the `TextInputInactive` component to be inactive
     pub fn inactive(&mut self) {
-        self.0 = false;
+        self.0 = true;
     }
 }
 
