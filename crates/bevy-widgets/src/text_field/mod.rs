@@ -113,6 +113,10 @@ impl Plugin for TextInputPlugin {
 )]
 pub struct TextInput;
 
+/// Marker component for the text input's label.
+#[derive(Component, Default, Reflect)]
+pub struct FixedTextLabel;
+
 /// A wrapper for Bevy `TextFont` that will be used when creating the text input's inner Bevy `TextBundle`.
 #[derive(Component, Default, Reflect)]
 pub struct TextInputTextFont(pub TextFont);

@@ -28,6 +28,7 @@ fn setup(mut commands: Commands) {
             parent.spawn(
                 TextInputBuilder::default()
                     .with_placeholder("placeholder".to_string())
+                    .with_hint_text("hint text".to_string())
                     .clear_on_submit()
                     .build(),
             );

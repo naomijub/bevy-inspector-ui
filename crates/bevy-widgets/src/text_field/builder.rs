@@ -8,8 +8,8 @@ use bevy::prelude::*;
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Component, Reflect)]
 #[reflect(Component)]
 pub struct TextInputDescriptions {
-    label: Option<String>,
-    hint: Option<String>,
+    pub(crate) label: Option<String>,
+    pub(crate) hint: Option<String>,
 }
 
 /// Text fields can be classified accordingly to their height:
@@ -71,6 +71,15 @@ impl TextInputSize {
             Self::Small => 28.,
             Self::Medium => 36.,
             Self::Large => 42.,
+        }
+    }
+
+    /// Hint text spacing for [`TextInputSize`]
+    pub const fn hint_text_spacing(&self) -> f32 {
+        match self {
+            Self::Small => 2.,
+            Self::Medium => 10.,
+            Self::Large => 10.,
         }
     }
 

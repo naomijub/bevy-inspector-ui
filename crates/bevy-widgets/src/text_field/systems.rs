@@ -21,14 +21,17 @@ pub(super) fn keyboard(
     key_input: Res<ButtonInput<KeyCode>>,
     input_events: Res<Events<KeyboardInput>>,
     mut input_reader: Local<EventCursor<KeyboardInput>>,
-    mut text_input_query: Query<(
-        Entity,
-        &TextInputSettings,
-        &TextInputInactive,
-        &mut TextInputValue,
-        &mut TextInputCursorPos,
-        &mut TextInputCursorTimer,
-    )>,
+    mut text_input_query: Query<
+        (
+            Entity,
+            &TextInputSettings,
+            &TextInputInactive,
+            &mut TextInputValue,
+            &mut TextInputCursorPos,
+            &mut TextInputCursorTimer,
+        ),
+        Without<FixedTextLabel>,
+    >,
     mut submit_writer: EventWriter<TextInputSubmitEvent>,
     navigation: Res<TextInputNavigationBindings>,
 ) {
@@ -161,7 +164,10 @@ pub(super) fn update_value(
             &TextInputSettings,
             &mut TextInputCursorPos,
         ),
-        Or<(Changed<TextInputValue>, Changed<TextInputCursorPos>)>,
+        (
+            Without<FixedTextLabel>,
+            Or<(Changed<TextInputValue>, Changed<TextInputCursorPos>)>,
+        ),
     >,
     inner_text: InnerText,
     mut writer: TextUiWriter,
@@ -195,9 +201,13 @@ pub(super) fn update_value(
 pub(super) fn scroll_with_cursor(
     mut inner_text_query: Query<
         (&TextLayoutInfo, &mut Node, &Parent, Option<&TargetCamera>),
-        (With<TextInputInner>, Changed<TextLayoutInfo>),
+        (
+            With<TextInputInner>,
+            Without<FixedTextLabel>,
+            Changed<TextLayoutInfo>,
+        ),
     >,
-    mut style_query: Query<&mut Node, Without<TextInputInner>>,
+    mut style_query: Query<&mut Node, (Without<FixedTextLabel>, Without<TextInputInner>)>,
     camera_query: Query<&Camera>,
     window_query: Query<&Window>,
     primary_window_query: Query<&Window, With<PrimaryWindow>>,
@@ -298,6 +308,8 @@ pub(super) fn create(
         &TextInputSettings,
         &Placeholder,
         &TextInputSize,
+        &TextInputState,
+        &TextInputDescriptions,
     )>,
 ) {
     if let Ok((
@@ -310,6 +322,8 @@ pub(super) fn create(
         settings,
         placeholder,
         text_input_size,
+        text_state,
+        extras,
     )) = &query.get(trigger.entity())
     {
         #[allow(clippy::option_if_let_else)]
@@ -393,9 +407,33 @@ pub(super) fn create(
         commands
             .entity(trigger.entity())
             .add_children(&[overflow_container, placeholder_text]);
-
         // Prevent clicks from registering on UI elements underneath the text input.
         commands.entity(trigger.entity()).insert(FocusPolicy::Block);
+
+        if let Some(hint) = &&extras.hint {
+            let hint_id = commands
+                .spawn((
+                    Text::new(hint),
+                    TextLayout::new_with_linebreak(LineBreak::NoWrap),
+                    Name::new("TextInputHint"),
+                    TextColor(text_state.hint_color()),
+                    FixedTextLabel,
+                    TextFont {
+                        font_size: text_input_size.hint_font_size(),
+                        ..default()
+                    },
+                    Node {
+                        position_type: PositionType::Absolute,
+                        left: Val::Px(0.),
+                        top: Val::Px(
+                            text_input_size.height() + text_input_size.hint_text_spacing(),
+                        ),
+                        ..default()
+                    },
+                ))
+                .id();
+            commands.entity(trigger.entity()).add_child(hint_id);
+        };
     }
 }
 
