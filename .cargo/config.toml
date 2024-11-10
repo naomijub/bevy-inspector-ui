@@ -1,0 +1,10 @@
+[build]
+rustflags = [
+    "-W" , "missing_docs"
+]
+
+[term]
+quiet = true
+verbose = false
+progress.width = 250
+progress.when = "always"

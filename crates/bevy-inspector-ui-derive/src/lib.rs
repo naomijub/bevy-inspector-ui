@@ -1,3 +1,5 @@
+#![allow(missing_docs)]
+// this crate will not have documentation
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{DataEnum, DataStruct, DataUnion, DeriveInput};
@@ -19,7 +21,7 @@ pub fn inspectable(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 }
 
 fn expand_struct(input: &DeriveInput, data: &DataStruct) -> syn::Result<TokenStream> {
-    let bevy_reflect = quote! { ::bevy_inspector_egui::__macro_exports::bevy_reflect };
+    let bevy_reflect = quote! { ::bevy_inspector_ui::__macro_exports::bevy_reflect };
 
     let fields = data
         .fields
@@ -44,9 +46,9 @@ fn expand_struct(input: &DeriveInput, data: &DataStruct) -> syn::Result<TokenStr
             });
 
             Some(Ok(quote! {
-                let mut field_options = <#ty as ::bevy_inspector_egui::inspector_options::InspectorOptionsType>::DeriveOptions::default();
+                let mut field_options = <#ty as ::bevy_inspector_ui::inspector_options::InspectorOptionsType>::DeriveOptions::default();
                 #(#attrs)*
-                options.insert(::bevy_inspector_egui::inspector_options::Target::Field(#i), <#ty as ::bevy_inspector_egui::inspector_options::InspectorOptionsType>::options_from_derive(field_options));
+                options.insert(::bevy_inspector_ui::inspector_options::Target::Field(#i), <#ty as ::bevy_inspector_ui::inspector_options::InspectorOptionsType>::options_from_derive(field_options));
             }))
         })
         .collect::<syn::Result<Vec<_>>>()?;
@@ -55,11 +57,11 @@ fn expand_struct(input: &DeriveInput, data: &DataStruct) -> syn::Result<TokenStr
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
 
     Ok(quote! {
-        impl #impl_generics #bevy_reflect::FromType<#type_name #ty_generics> for ::bevy_inspector_egui::InspectorOptions
+        impl #impl_generics #bevy_reflect::FromType<#type_name #ty_generics> for ::bevy_inspector_ui::InspectorOptions
         #where_clause
         {
             fn from_type() -> Self {
-                let mut options = ::bevy_inspector_egui::InspectorOptions::default();
+                let mut options = ::bevy_inspector_ui::InspectorOptions::default();
 
                 #(#fields)*
 
@@ -70,7 +72,7 @@ fn expand_struct(input: &DeriveInput, data: &DataStruct) -> syn::Result<TokenStr
 }
 
 fn expand_enum(input: &DeriveInput, data: &DataEnum) -> syn::Result<TokenStream> {
-    let bevy_reflect = quote! { ::bevy_inspector_egui::__macro_exports::bevy_reflect };
+    let bevy_reflect = quote! { ::bevy_inspector_ui::__macro_exports::bevy_reflect };
 
     let fields = data
         .variants
@@ -100,14 +102,14 @@ fn expand_enum(input: &DeriveInput, data: &DataEnum) -> syn::Result<TokenStream>
                     });
 
                     Some(Ok(quote! {
-                        let mut field_options = <#ty as ::bevy_inspector_egui::inspector_options::InspectorOptionsType>::DeriveOptions::default();
+                        let mut field_options = <#ty as ::bevy_inspector_ui::inspector_options::InspectorOptionsType>::DeriveOptions::default();
                         #(#attrs)*
                         options.insert(
-                            ::bevy_inspector_egui::inspector_options::Target::VariantField {
+                            ::bevy_inspector_ui::inspector_options::Target::VariantField {
                                 variant_index: #variant_index,
                                 field_index: #field_index,
                             },
-                            <#ty as ::bevy_inspector_egui::inspector_options::InspectorOptionsType>::options_from_derive(field_options)
+                            <#ty as ::bevy_inspector_ui::inspector_options::InspectorOptionsType>::options_from_derive(field_options)
                         );
                     }))
                 })
@@ -120,11 +122,11 @@ fn expand_enum(input: &DeriveInput, data: &DataEnum) -> syn::Result<TokenStream>
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
 
     Ok(quote! {
-        impl #impl_generics #bevy_reflect::FromType<#type_name #ty_generics> for ::bevy_inspector_egui::InspectorOptions
+        impl #impl_generics #bevy_reflect::FromType<#type_name #ty_generics> for ::bevy_inspector_ui::InspectorOptions
         #where_clause
         {
             fn from_type() -> Self {
-                let mut options = ::bevy_inspector_egui::InspectorOptions::default();
+                let mut options = ::bevy_inspector_ui::InspectorOptions::default();
 
                 #(#(#fields)*)*
 

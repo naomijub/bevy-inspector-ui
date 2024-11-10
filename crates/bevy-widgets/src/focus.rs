@@ -1,66 +1,78 @@
-use bevy_app::{App, Last, Plugin};
-use bevy_ecs::{
+use bevy::app::{App, Plugin};
+use bevy::ecs::{
     observer::Trigger,
-    prelude::{resource_exists, Component, Entity, Event, Resource},
+    prelude::{Component, Entity, Event},
     query::With,
-    schedule::IntoSystemConfigs,
-    system::{Commands, Query, Res},
+    system::{Commands, Query},
 };
-use bevy_picking::{
+use bevy::input::ButtonInput;
+use bevy::picking::{
     pointer::PointerButton,
     prelude::{Click, Pointer},
 };
+use bevy::reflect::Reflect;
+
+/// Plugin containing the focus system logic
 pub struct FocusPlugin;
 
 impl Plugin for FocusPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<SetFocus>();
-        app.add_event::<ClearFocus>();
-        app.add_event::<GotFocus>();
-        app.add_event::<LostFocus>();
-
-        app.observe(set_focus);
-        app.observe(clear_focus);
-        app.observe(mouse_click);
+        app.add_event::<SetFocus>()
+            .add_event::<ClearFocus>()
+            .add_event::<GotFocus>()
+            .add_event::<LostFocus>();
 
         app.add_systems(
-            Last,
-            clear_focus_after_click.run_if(resource_exists::<NeedClearFocus>),
+            bevy::app::Update,
+            |mut commands: Commands,
+             input: bevy::ecs::system::Res<ButtonInput<bevy::input::keyboard::KeyCode>>| {
+                if input.just_pressed(bevy::input::keyboard::KeyCode::Escape) {
+                    commands.trigger_targets(ClearFocus, Entity::PLACEHOLDER);
+                }
+            },
         );
+        app.add_observer(set_focus)
+            .add_observer(clear_focus)
+            .add_observer(mouse_click);
     }
 }
 
-/// Component which indicates that a widget is focused and can receive input events.
-#[derive(Component)]
+/// Component which indicates that a widget has focus.
+#[derive(Component, Reflect)]
 pub struct Focus;
 
-/// Mark that a widget can receive input events and can be focused
-#[derive(Component)]
-pub struct Focusable;
+/// Mark that a widget can receive click input events to add focus
+#[derive(Component, Reflect, Default)]
+pub struct Clickable;
 
-/// Event indicating that a widget has received focus
-#[derive(Event)]
+/// Event indicating that a widget has received focus event due to click.
+/// - Needs manual implementation to react to this triggered event.
+/// > Only works automatically if the widget has the [`Clickable`] component
+#[derive(Event, Reflect)]
 pub struct GotFocus(pub Option<Pointer<Click>>);
 
-/// Event indicating that a widget has lost focus
-#[derive(Event)]
+/// Event indicating that a widget has lost focus due to focus or click somewhere else
+/// - Needs manual implementation to react to this triggered event
+#[derive(Event, Reflect)]
 pub struct LostFocus;
 
 /// Set focus to a widget
-#[derive(Event)]
+/// Event to be called with `commands.set_focus(entity)`
+#[derive(Event, Reflect)]
 pub struct SetFocus;
 
-/// Clear focus from widgets
-#[derive(Event)]
+/// Remove focus from widgets
+/// Event to be called with `commands.clear_focus()`
+#[derive(Event, Reflect)]
 pub struct ClearFocus;
 
 /// Extension trait for [`Commands`]
-/// Contains commands to set and clear input focus
+/// Contains commands to set and clear widget focus
 pub trait FocusExt {
-    /// Set input focus to the given targets
+    /// Set input focus to the given target
     fn set_focus(&mut self, target: Entity);
 
-    /// Clear input focus
+    /// Clears focus in all widgets
     fn clear_focus(&mut self);
 }
 
@@ -74,32 +86,30 @@ impl FocusExt for Commands<'_, '_> {
     }
 }
 
-#[derive(Resource)]
-struct NeedClearFocus(bool);
-
 fn set_focus(
     trigger: Trigger<SetFocus>,
     mut commands: Commands,
-    q_focused: Query<Entity, With<Focus>>,
+    with_focus: Query<Entity, With<Focus>>,
 ) {
-    for entity in q_focused.iter() {
-        if entity == trigger.entity() {
+    let set_entity = trigger.entity();
+    for entity in with_focus.iter() {
+        if entity == set_entity {
             continue;
         }
         commands.entity(entity).remove::<Focus>();
         commands.trigger_targets(LostFocus, entity);
     }
-    commands.entity(trigger.entity()).insert(Focus);
-    commands.trigger_targets(GotFocus(None), trigger.entity());
+    commands.entity(set_entity).insert(Focus);
+    commands.trigger_targets(GotFocus(None), set_entity);
 }
 
 fn clear_focus(
     _: Trigger<ClearFocus>,
     mut commands: Commands,
-    q_focused: Query<Entity, With<Focus>>,
+    focused: Query<Entity, With<Focus>>,
 ) {
-    for entity in q_focused.iter() {
-        commands.entity(entity).insert(Focus);
+    for entity in focused.iter() {
+        commands.entity(entity).remove::<Focus>();
         commands.trigger_targets(LostFocus, entity);
     }
 }
@@ -107,19 +117,18 @@ fn clear_focus(
 fn mouse_click(
     mut click: Trigger<Pointer<Click>>,
     mut commands: Commands,
-    q_focusable: Query<Entity, With<Focusable>>,
-    q_focused: Query<Entity, With<Focus>>,
+    clickable_entities: Query<Entity, With<Clickable>>,
+    focus_entities: Query<Entity, With<Focus>>,
 ) {
     if click.event().button != PointerButton::Primary {
         return;
     }
-    
-    let entity = click.entity();
-    if q_focusable.contains(entity) {
-        commands.insert_resource(NeedClearFocus(false));
 
+    let entity = click.entity();
+    if clickable_entities.contains(entity) {
         click.propagate(false);
-        for e in q_focused.iter() {
+
+        for e in focus_entities.iter() {
             if e == entity {
                 continue;
             }
@@ -128,14 +137,5 @@ fn mouse_click(
         }
         commands.entity(entity).insert(Focus);
         commands.trigger_targets(GotFocus(Some(click.event().clone())), entity);
-    } else {
-        commands.insert_resource(NeedClearFocus(true));
-    }
-}
-
-fn clear_focus_after_click(mut commands: Commands, need_clear_focus: Res<NeedClearFocus>) {
-    if need_clear_focus.0 {
-        commands.clear_focus();
-        commands.remove_resource::<NeedClearFocus>();
     }
 }

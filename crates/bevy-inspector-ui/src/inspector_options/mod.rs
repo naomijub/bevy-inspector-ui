@@ -27,7 +27,7 @@ pub use bevy_inspector_ui_derive::InspectorOptions;
 ///
 /// Comes with a [derive macro](derive@InspectorOptions), which generates a `FromType<T> for InspectorOptions` impl:
 /// ```rust
-/// use bevy_inspector_egui::prelude::*;
+/// use bevy_inspector_ui::prelude::*;
 /// use bevy_reflect::Reflect;
 ///
 /// #[derive(Reflect, Default, InspectorOptions)]
@@ -40,7 +40,7 @@ pub use bevy_inspector_ui_derive::InspectorOptions;
 /// ```
 /// will expand roughly to
 /// ```rust
-/// # use bevy_inspector_egui::inspector_options::{InspectorOptions, Target, std_options::NumberOptions};
+/// # use bevy_inspector_ui::inspector_options::{InspectorOptions, Target, std_options::NumberOptions};
 /// let mut options = InspectorOptions::default();
 /// let mut field_options = NumberOptions::default();
 /// field_options.min = 10.0.into();
@@ -115,7 +115,7 @@ where
 /// will expand to this:
 /// ```rust
 /// # use std::convert::Into;
-/// # use bevy_inspector_egui::inspector_options::{InspectorOptions, InspectorOptionsType, Target};
+/// # use bevy_inspector_ui::inspector_options::{InspectorOptions, InspectorOptionsType, Target};
 /// let mut options = InspectorOptions::default();
 /// let mut field_options =  <f32 as InspectorOptionsType>::DeriveOptions::default();
 /// field_options.min = Into::into(2.0);
