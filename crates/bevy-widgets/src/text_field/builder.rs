@@ -34,6 +34,20 @@ impl TextInputSize {
         }
     }
 
+    /// Checks if the `TextInputSize` is `Large`.
+    ///
+    /// # Returns
+    ///
+    /// * `true` if the size is `Large`.
+    /// * `false` otherwise.
+    pub const fn is_large(&self) -> bool {
+        match self {
+            Self::Small => false,
+            Self::Medium => false,
+            Self::Large => true,
+        }
+    }
+
     /// Default [`TextColor`] component
     pub const fn default_text_color(&self) -> TextColor {
         TextColor(DEFAULT_FONT_COLOR)
@@ -61,8 +75,14 @@ impl TextInputSize {
     }
 
     /// Padding for TextInput
-    pub fn padding(&self) -> UiRect {
-        UiRect::axes(Val::Px(16.), Val::Px(8.))
+    pub fn padding(&self, has_label: bool) -> UiRect {
+        let vertical = match (has_label, self) {
+            (true, Self::Small) => 2.,
+            (true, Self::Medium) => 4.,
+            (true, Self::Large) => 4.,
+            (false, _) => 8.,
+        };
+        UiRect::axes(Val::Px(16.), Val::Px(vertical))
     }
 
     /// Height for [`TextInputSize`]
@@ -138,6 +158,14 @@ impl TextInputState {
             Self::Warning => WARNING_HINT_COLOR,
             Self::Error => ERROR_HINT_COLOR,
             Self::Disabled => DISABLED_HINT_COLOR,
+        }
+    }
+
+    pub(crate) const fn label_color(&self) -> Color {
+        match self {
+            Self::Warning => WARNING_HINT_COLOR,
+            Self::Error => ERROR_HINT_COLOR,
+            _ => DISABLED_HINT_COLOR,
         }
     }
 }
@@ -254,7 +282,7 @@ impl TextInputBuilder {
                 height: Val::Px(self.size.height()),
                 min_width: Val::Px(self.size.min_width()),
                 border: UiRect::all(Val::Px(2.0)),
-                padding: self.size.padding(),
+                padding: self.size.padding(extras.label.is_some()),
                 ..default()
             },
             TextInputState::Default.border_color().into(),

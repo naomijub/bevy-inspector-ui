@@ -30,7 +30,7 @@ pub(super) fn keyboard(
             &mut TextInputCursorPos,
             &mut TextInputCursorTimer,
         ),
-        Without<FixedTextLabel>,
+        (Without<FixedTextLabel>, With<Focus>),
     >,
     mut submit_writer: EventWriter<TextInputSubmitEvent>,
     navigation: Res<TextInputNavigationBindings>,
@@ -386,6 +386,7 @@ pub(super) fn create(
                 },
                 Node {
                     position_type: PositionType::Absolute,
+                    bottom: text_input_size.padding(extras.label.is_some()).bottom,
                     ..default()
                 },
             ))
@@ -394,8 +395,9 @@ pub(super) fn create(
         let overflow_container = commands
             .spawn((
                 Node {
-                    overflow: Overflow::clip(),
+                    overflow: Overflow::clip_x(),
                     justify_content: JustifyContent::FlexEnd,
+                    flex_direction: FlexDirection::Column,
                     max_width: Val::Percent(100.),
                     ..default()
                 },
@@ -433,6 +435,28 @@ pub(super) fn create(
                 ))
                 .id();
             commands.entity(trigger.entity()).add_child(hint_id);
+        };
+        if let Some(label) = &&extras.label {
+            let label_id = commands
+                .spawn((
+                    Text::new(label),
+                    TextLayout::new_with_linebreak(LineBreak::NoWrap),
+                    Name::new("TextInputLabel"),
+                    TextColor(bevy::color::palettes::css::RED.into()), //text_state.label_color()),
+                    FixedTextLabel,
+                    TextFont {
+                        font_size: text_input_size.label_font_size(),
+                        ..default()
+                    },
+                    Node {
+                        position_type: PositionType::Absolute,
+                        left: Val::Px(16.),
+                        top: Val::Px(if text_input_size.is_large() { 4. } else { 2. }),
+                        ..default()
+                    },
+                ))
+                .id();
+            commands.entity(trigger.entity()).add_child(label_id);
         };
     }
 }
