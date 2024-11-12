@@ -11,6 +11,7 @@ use bevy::{
     window::{PrimaryWindow, WindowRef},
 };
 
+use builder::{ErrorValidationCallback, WarningValidationCallback};
 use constants::{
     DEFAULT_BACKGROUND_COLOR, DISABLED_BACKGROUND_COLOR, ERROR_BACKGROUND_COLOR,
     ERROR_BORDER_COLOR, SELECTED_BACKGROUND_COLOR, SELECTED_BORDER_COLOR, WARNING_BACKGROUND_COLOR,
@@ -442,7 +443,7 @@ pub(super) fn create(
                     Text::new(label),
                     TextLayout::new_with_linebreak(LineBreak::NoWrap),
                     Name::new("TextInputLabel"),
-                    TextColor(bevy::color::palettes::css::RED.into()), //text_state.label_color()),
+                    TextColor(text_state.label_color()),
                     FixedTextLabel,
                     TextFont {
                         font_size: text_input_size.label_font_size(),
@@ -692,6 +693,58 @@ pub(super) fn on_state_changed(
                 *border = DISABLED_BACKGROUND_COLOR.into();
             }
             _ => {}
+        }
+    }
+}
+
+pub(super) fn on_error_validation(
+    mut interaction_query: Query<
+        (
+            &Children,
+            &mut ErrorValidationCallback,
+            &TextInputValue,
+            &mut TextInputState,
+        ),
+        (Changed<TextInputState>, With<TextInput>),
+    >,
+) {
+    for (_, mut callback, new_value, mut state) in interaction_query.iter_mut() {
+        let s = &new_value.0;
+        if (callback.func)(s) {
+            if callback.original_state.is_none() {
+                callback.original_state = Some(*state);
+            }
+            *state = TextInputState::Error;
+        } else if let (Some(original_state), false) =
+            (callback.original_state, state.validation_state())
+        {
+            *state = original_state;
+        }
+    }
+}
+
+pub(super) fn on_warning_validation(
+    mut interaction_query: Query<
+        (
+            &Children,
+            &mut WarningValidationCallback,
+            &TextInputValue,
+            &mut TextInputState,
+        ),
+        (Changed<TextInputState>, With<TextInput>),
+    >,
+) {
+    for (_, mut callback, new_value, mut state) in interaction_query.iter_mut() {
+        let s = &new_value.0;
+        if (callback.func)(s) {
+            if callback.original_state.is_none() {
+                callback.original_state = Some(*state);
+            }
+            *state = TextInputState::Warning;
+        } else if let (Some(original_state), false) =
+            (callback.original_state, state.validation_state())
+        {
+            *state = original_state;
         }
     }
 }

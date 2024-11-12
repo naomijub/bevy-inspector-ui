@@ -4,6 +4,60 @@ use super::{
 };
 use bevy::prelude::*;
 
+/// Text input validation callback
+pub type ValidationCallback = fn(&str) -> bool;
+// pub type ValidationCallback2 = dyn Fn(&str) -> bool;
+
+/// Text input warning validation callback component
+#[derive(Debug, Component, Reflect)]
+#[reflect(Component)]
+pub struct WarningValidationCallback {
+    /// callback function
+    pub func: ValidationCallback,
+    /// previous inout state helper
+    pub(crate) original_state: Option<TextInputState>,
+}
+
+impl WarningValidationCallback {
+    /// Creates a new `WarningValidationCallback` from a callback function.
+    ///
+    /// The callback function will be called each time the text input changes.
+    /// The callback should return `true` if the text input is valid and `false`
+    /// otherwise. If the callback returns `false` the text input component will
+    /// be marked as invalid and the `Warning` style will be applied.
+    pub fn new(func: ValidationCallback) -> Self {
+        Self {
+            func,
+            original_state: None,
+        }
+    }
+}
+
+/// Text input error validation callback component
+#[derive(Debug, Component, Reflect)]
+#[reflect(Component)]
+pub struct ErrorValidationCallback {
+    /// callback function
+    pub func: ValidationCallback,
+    /// previous inout state helper
+    pub(crate) original_state: Option<TextInputState>,
+}
+
+impl ErrorValidationCallback {
+    /// Creates a new `ErrorValidationCallback` from a callback function.
+    ///
+    /// The callback function will be called each time the text input changes.
+    /// The callback should return `true` if the text input is valid and `false`
+    /// otherwise. If the callback returns `false` the text input component will
+    /// be marked as invalid and the `Error` style will be applied.
+    pub fn new(func: ValidationCallback) -> Self {
+        Self {
+            func,
+            original_state: None,
+        }
+    }
+}
+
 /// Textcomponent qualifying label and hint texts
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Component, Reflect)]
 #[reflect(Component)]
@@ -167,6 +221,16 @@ impl TextInputState {
             Self::Error => ERROR_HINT_COLOR,
             _ => DISABLED_HINT_COLOR,
         }
+    }
+
+    /// Determines if the current state represents a validation issue.
+    ///
+    /// # Returns
+    ///
+    /// * `true` if the state is either `Warning` or `Error`.
+    /// * `false` otherwise.
+    pub const fn validation_state(&self) -> bool {
+        matches!(self, Self::Warning | Self::Error)
     }
 }
 

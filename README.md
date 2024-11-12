@@ -8,10 +8,6 @@ Bevy-inspector-ui is composed of 3 main crates `bevy-inspector-ui`, `bevy-inspec
 
 ## Bevy-widgets TODO:
 
-- [] Text Input Field
-    - [] Change input field on validation error
-        - [] error
-        - [] warning
 - [] Dropdown
     - [] states: default, hover, focus, selected and disabled
     - [] open and closed states

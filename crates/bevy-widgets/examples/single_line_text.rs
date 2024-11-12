@@ -1,7 +1,9 @@
 #![allow(missing_docs)]
 use bevy::{prelude::*, winit::WinitSettings};
 use bevy_widgets::{text_field::*, WidgetsPlugin};
-use builder::{TextInputBuilder, TextInputSize};
+use builder::{
+    ErrorValidationCallback, TextInputBuilder, TextInputSize, WarningValidationCallback,
+};
 
 fn main() {
     App::new()
@@ -37,13 +39,15 @@ fn setup(mut commands: Commands) {
                     ..default()
                 })
                 .with_children(|parent| {
-                    parent.spawn(
+                    parent.spawn((
                         TextInputBuilder::default()
                             .with_placeholder("placeholder".to_string())
                             .with_hint_text("hint text".to_string())
                             .clear_on_submit()
                             .build(),
-                    );
+                        ErrorValidationCallback::new(|s: &str| s.starts_with("000")),
+                        WarningValidationCallback::new(|s: &str| s.starts_with("111")),
+                    ));
                 });
             spawn_node(builder, TextInputSize::Large);
         });

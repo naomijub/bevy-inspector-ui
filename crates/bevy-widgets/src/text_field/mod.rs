@@ -45,6 +45,7 @@ impl Plugin for TextInputPlugin {
                 )
                     .in_set(TextInputSystem),
             )
+            .add_systems(PostUpdate, (on_error_validation, on_warning_validation))
             .add_systems(Update, on_state_changed)
             .register_type::<TextInputSettings>()
             .register_type::<TextInputTextColor>()
