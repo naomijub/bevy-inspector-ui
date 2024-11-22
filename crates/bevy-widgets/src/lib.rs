@@ -24,6 +24,8 @@ pub mod clipboard;
 pub mod focus;
 /// Module containing all single line text field related configuration
 pub mod text_field;
+/// Module containing numeric input related configuration
+pub mod numeric_field;
 
 /// Plugin for all Bevy widgets
 pub struct WidgetsPlugin;
