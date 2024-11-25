@@ -14,7 +14,8 @@ use bevy::app::{App, Plugin, Update};
 use buttons::{systems::button_system, ButtonClickedEvent};
 use clipboard::ClipboardPlugin;
 use focus::FocusPlugin;
-use text_field::TextInputPlugin;
+// use numberic_field::NumberInputPlugin;
+use input_fields::InputFieldPlugin;
 
 /// Module containing all button related configuration
 pub mod buttons;
@@ -23,9 +24,7 @@ pub mod clipboard;
 /// Module containing all focus related configuration
 pub mod focus;
 /// Module containing all single line text field related configuration
-pub mod text_field;
-/// Module containing numeric input related configuration
-pub mod numeric_field;
+pub mod input_fields;
 
 /// Plugin for all Bevy widgets
 pub struct WidgetsPlugin;
@@ -34,7 +33,7 @@ impl Plugin for WidgetsPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<ButtonClickedEvent>()
             // Base/Transversal plugins
-            .add_plugins((ClipboardPlugin, FocusPlugin, TextInputPlugin))
+            .add_plugins((ClipboardPlugin, FocusPlugin, InputFieldPlugin))
             .add_systems(Update, button_system);
     }
 }

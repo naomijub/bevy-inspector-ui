@@ -12,11 +12,33 @@ use bevy::{
 };
 
 use builder::{ErrorValidationCallback, WarningValidationCallback};
+use components::{
+    numeric::{NumericField, NumericFieldValue},
+    text::TextInputPlaceholderInner,
+    AllowedCharSet,
+};
 use constants::{
     DEFAULT_BACKGROUND_COLOR, DISABLED_BACKGROUND_COLOR, ERROR_BACKGROUND_COLOR,
-    ERROR_BORDER_COLOR, SELECTED_BACKGROUND_COLOR, SELECTED_BORDER_COLOR, WARNING_BACKGROUND_COLOR,
-    WARNING_BORDER_COLOR,
+    ERROR_BORDER_COLOR, HOVERED_BACKGROUND_COLOR, SELECTED_BACKGROUND_COLOR, SELECTED_BORDER_COLOR,
+    WARNING_BACKGROUND_COLOR, WARNING_BORDER_COLOR,
 };
+
+/// For custom numeric fields, you need to call this method after SystemSet [`InputFieldSystemSet`]
+pub fn on_numeric_text_changed<T: NumericFieldValue>(
+    mut text_input_query: Query<
+        (&mut InputTextValue, &mut NumericField<T>),
+        (Changed<InputTextValue>, With<AllowedCharSet>),
+    >,
+) {
+    for (mut text, mut numeric) in text_input_query.iter_mut() {
+        let current_numeric_value = numeric.value;
+        if let Ok(numeric_value) = text.0.trim().parse() {
+            numeric.set_value(numeric_value);
+        } else {
+            text.0 = current_numeric_value.to_string();
+        }
+    }
+}
 
 pub(super) fn keyboard(
     key_input: Res<ButtonInput<KeyCode>>,
@@ -25,16 +47,17 @@ pub(super) fn keyboard(
     mut text_input_query: Query<
         (
             Entity,
-            &TextInputSettings,
-            &TextInputInactive,
-            &mut TextInputValue,
-            &mut TextInputCursorPos,
-            &mut TextInputCursorTimer,
+            &InputFieldSettings,
+            &InputInactive,
+            &mut InputTextValue,
+            &mut InputTextCursorPos,
+            &mut InputCursorTimer,
+            Option<&AllowedCharSet>,
         ),
         (Without<FixedTextLabel>, With<Focus>),
     >,
-    mut submit_writer: EventWriter<TextInputSubmitEvent>,
-    navigation: Res<TextInputNavigationBindings>,
+    mut submit_writer: EventWriter<InputFieldSubmitEvent>,
+    navigation: Res<InputTextNavigationBindings>,
 ) {
     if input_reader.clone().read(&input_events).next().is_none() {
         return;
@@ -49,8 +72,15 @@ pub(super) fn keyboard(
         })
         .map(|(action, TextInputBinding { key, .. })| (*key, action));
 
-    for (input_entity, settings, inactive, mut text_input, mut cursor_pos, mut cursor_timer) in
-        &mut text_input_query
+    for (
+        input_entity,
+        settings,
+        inactive,
+        mut text_input,
+        mut cursor_pos,
+        mut cursor_timer,
+        char_set,
+    ) in &mut text_input_query
     {
         if inactive.0 {
             continue;
@@ -69,7 +99,7 @@ pub(super) fn keyboard(
                 .clone()
                 .find(|(key, _)| *key == input.key_code)
             {
-                use TextInputAction::*;
+                use InputTextAction::*;
                 let mut timer_should_reset = true;
                 match action {
                     CharLeft => cursor_pos.0 = cursor_pos.0.saturating_sub(1),
@@ -128,26 +158,30 @@ pub(super) fn keyboard(
 
             match input.logical_key {
                 Key::Space => {
-                    let byte_pos = byte_pos(&text_input.0, pos);
-                    text_input.0.insert(byte_pos, ' ');
-                    cursor_pos.0 += 1;
+                    if char_set.map_or(true, |chars| !chars.has_invalid_char(' ')) {
+                        let byte_pos = byte_pos(&text_input.0, pos);
+                        text_input.0.insert(byte_pos, ' ');
+                        cursor_pos.0 += 1;
 
-                    cursor_timer.should_reset = true;
+                        cursor_timer.should_reset = true;
+                    }
                 }
                 Key::Character(ref s) => {
-                    let byte_pos = byte_pos(&text_input.0, pos);
-                    text_input.0.insert_str(byte_pos, s.as_str());
+                    if char_set.map_or(true, |chars| !chars.has_invalid_chars(s)) {
+                        let byte_pos = byte_pos(&text_input.0, pos);
+                        text_input.0.insert_str(byte_pos, s.as_str());
 
-                    cursor_pos.0 += 1;
+                        cursor_pos.0 += 1;
 
-                    cursor_timer.should_reset = true;
+                        cursor_timer.should_reset = true;
+                    }
                 }
                 _ => (),
             }
         }
 
         if let Some(value) = submitted_value {
-            submit_writer.send(TextInputSubmitEvent {
+            submit_writer.send(InputFieldSubmitEvent {
                 entity: input_entity,
                 value,
             });
@@ -161,13 +195,13 @@ pub(super) fn update_value(
     mut input_query: Query<
         (
             Entity,
-            Ref<TextInputValue>,
-            &TextInputSettings,
-            &mut TextInputCursorPos,
+            Ref<InputTextValue>,
+            &InputFieldSettings,
+            &mut InputTextCursorPos,
         ),
         (
             Without<FixedTextLabel>,
-            Or<(Changed<TextInputValue>, Changed<TextInputCursorPos>)>,
+            Or<(Changed<InputTextValue>, Changed<InputTextCursorPos>)>,
         ),
     >,
     inner_text: InnerText,
@@ -296,20 +330,103 @@ pub(super) fn scroll_with_cursor(
     }
 }
 
-pub(super) fn create(
-    trigger: Trigger<OnAdd, TextInputValue>,
+pub(super) fn create_numeric_field(
+    trigger: Trigger<OnAdd, NumericInput>,
     mut commands: Commands,
     query: Query<(
         Entity,
-        &TextInputTextFont,
-        &TextInputTextColor,
-        &TextInputValue,
-        Option<&TextInputCursorPos>,
-        &TextInputInactive,
-        &TextInputSettings,
+        &InputTextFont,
+        &InputTextColor,
+        &InputTextValue,
+        Option<&InputTextCursorPos>,
+        &InputInactive,
+        &InputFieldSettings,
+    )>,
+) {
+    if let Ok((entity, font, color, text_input, maybe_cursor_pos, inactive, settings)) =
+        &query.get(trigger.entity())
+    {
+        #[expect(clippy::option_if_let_else)]
+        // Internal mutation
+        let cursor_pos = match maybe_cursor_pos {
+            None => {
+                let len = text_input.0.len();
+                commands.entity(*entity).insert(InputTextCursorPos(len));
+                len
+            }
+            Some(cursor_pos) => cursor_pos.0,
+        };
+
+        let values = get_section_values(
+            &masked_value(&text_input.0, settings.mask_character),
+            cursor_pos,
+        );
+
+        let text = commands
+            .spawn((
+                Text::default(),
+                TextLayout::new_with_linebreak(LineBreak::NoWrap),
+                Name::new("NumericInputInner"),
+                TextInputInner,
+            ))
+            .with_children(|parent| {
+                parent.spawn((TextSpan::new(values.0), font.0.clone(), color.0));
+
+                parent.spawn((
+                    TextSpan::new(values.1),
+                    TextFont {
+                        font: CURSOR_HANDLE,
+                        ..font.0.clone()
+                    },
+                    if inactive.0 {
+                        Color::NONE.into()
+                    } else {
+                        color.0
+                    },
+                ));
+
+                parent.spawn((TextSpan::new(values.2), font.0.clone(), color.0));
+            })
+            .id();
+
+        let overflow_container = commands
+            .spawn((
+                Node {
+                    overflow: Overflow::clip_x(),
+                    justify_content: JustifyContent::FlexEnd,
+                    flex_direction: FlexDirection::Column,
+                    max_width: Val::Percent(100.),
+                    ..default()
+                },
+                FocusPolicy::Pass,
+                PickingBehavior::IGNORE,
+                Name::new("NumericInputOverflowContainer"),
+            ))
+            .id();
+
+        commands.entity(overflow_container).add_child(text);
+        commands
+            .entity(trigger.entity())
+            .add_child(overflow_container);
+        // Prevent clicks from registering on UI elements underneath the text input.
+        commands.entity(trigger.entity()).insert(FocusPolicy::Block);
+    }
+}
+
+pub(super) fn create_text_field(
+    trigger: Trigger<OnAdd, TextInput>,
+    mut commands: Commands,
+    query: Query<(
+        Entity,
+        &InputTextFont,
+        &InputTextColor,
+        &InputTextValue,
+        Option<&InputTextCursorPos>,
+        &InputInactive,
+        &InputFieldSettings,
         &Placeholder,
-        &TextInputSize,
-        &TextInputState,
+        &InputFieldSize,
+        &InputFieldState,
         &TextInputDescriptions,
     )>,
 ) {
@@ -327,12 +444,12 @@ pub(super) fn create(
         extras,
     )) = &query.get(trigger.entity())
     {
-        #[allow(clippy::option_if_let_else)]
+        #[expect(clippy::option_if_let_else)]
         // Internal mutation
         let cursor_pos = match maybe_cursor_pos {
             None => {
                 let len = text_input.0.len();
-                commands.entity(*entity).insert(TextInputCursorPos(len));
+                commands.entity(*entity).insert(InputTextCursorPos(len));
                 len
             }
             Some(cursor_pos) => cursor_pos.0,
@@ -376,6 +493,8 @@ pub(super) fn create(
             .spawn((
                 Text::new(&placeholder.0),
                 TextLayout::new_with_linebreak(LineBreak::NoWrap),
+                FocusPolicy::Pass,
+                PickingBehavior::IGNORE,
                 Placeholder::text_color(),
                 Placeholder::text_font(text_input_size),
                 Name::new("TextInputPlaceholderInner"),
@@ -402,6 +521,8 @@ pub(super) fn create(
                     max_width: Val::Percent(100.),
                     ..default()
                 },
+                FocusPolicy::Pass,
+                PickingBehavior::IGNORE,
                 Name::new("TextInputOverflowContainer"),
             ))
             .id();
@@ -445,6 +566,8 @@ pub(super) fn create(
                     Name::new("TextInputLabel"),
                     TextColor(text_state.label_color()),
                     FixedTextLabel,
+                    PickingBehavior::IGNORE,
+                    FocusPolicy::Pass,
                     TextFont {
                         font_size: text_input_size.label_font_size(),
                         ..default()
@@ -467,11 +590,11 @@ pub(super) fn show_hide_cursor(
     mut input_query: Query<
         (
             Entity,
-            &TextInputTextColor,
-            &mut TextInputCursorTimer,
-            &TextInputInactive,
+            &InputTextColor,
+            &mut InputCursorTimer,
+            &InputInactive,
         ),
-        Changed<TextInputInactive>,
+        Changed<InputInactive>,
     >,
     inner_text: InnerText,
     mut writer: TextUiWriter,
@@ -495,9 +618,9 @@ pub(super) fn show_hide_cursor(
 pub(super) fn blink_cursor(
     mut input_query: Query<(
         Entity,
-        &TextInputTextColor,
-        &mut TextInputCursorTimer,
-        Ref<TextInputInactive>,
+        &InputTextColor,
+        &mut InputCursorTimer,
+        Ref<InputInactive>,
     )>,
     inner_text: InnerText,
     mut writer: TextUiWriter,
@@ -537,8 +660,8 @@ pub(super) fn blink_cursor(
 
 pub(super) fn show_hide_placeholder(
     input_query: Query<
-        (&Children, &TextInputValue, &TextInputInactive),
-        Or<(Changed<TextInputValue>, Changed<TextInputInactive>)>,
+        (&Children, &InputTextValue, &InputInactive),
+        Or<(Changed<InputTextValue>, Changed<InputInactive>)>,
     >,
     mut vis_query: Query<&mut Visibility, With<TextInputPlaceholderInner>>,
 ) {
@@ -556,13 +679,8 @@ pub(super) fn show_hide_placeholder(
 
 pub(super) fn update_style(
     mut input_query: Query<
-        (
-            Entity,
-            &TextInputTextFont,
-            &TextInputTextColor,
-            &TextInputInactive,
-        ),
-        (Changed<TextInputTextFont>, Changed<TextInputTextColor>),
+        (Entity, &InputTextFont, &InputTextColor, &InputInactive),
+        (Changed<InputTextFont>, Changed<InputTextColor>),
     >,
     inner_text: InnerText,
     mut writer: TextUiWriter,
@@ -602,7 +720,7 @@ pub(super) fn get_section_values(value: &str, cursor_pos: usize) -> (String, Str
     (before, cursor, after)
 }
 
-pub(super) fn remove_char_at(input: &str, index: usize) -> String {
+pub(crate) fn remove_char_at(input: &str, index: usize) -> String {
     input
         .chars()
         .enumerate()
@@ -610,7 +728,7 @@ pub(super) fn remove_char_at(input: &str, index: usize) -> String {
         .collect()
 }
 
-pub(super) fn byte_pos(input: &str, char_pos: usize) -> usize {
+pub(crate) fn byte_pos(input: &str, char_pos: usize) -> usize {
     let mut char_indices = input.char_indices();
     char_indices
         .nth(char_pos)
@@ -633,12 +751,15 @@ pub(super) fn placeholder_color(color: &TextColor) -> TextColor {
 pub(super) fn on_add_focus(
     trigger: Trigger<OnAdd, Focus>,
     mut commands: Commands,
-    mut interaction_query: Query<(&mut TextInputInactive, &mut TextInputState), With<TextInput>>,
+    mut interaction_query: Query<
+        (&mut InputInactive, &mut InputFieldState),
+        Or<(With<TextInput>, With<NumericInput>)>,
+    >,
 ) {
     let entity = trigger.entity();
     if let Ok((mut inactive, mut state)) = interaction_query.get_mut(entity) {
         inactive.active();
-        *state = TextInputState::Selected;
+        *state = InputFieldState::Selected;
     } else {
         commands.entity(entity).remove::<Focus>();
     }
@@ -647,50 +768,86 @@ pub(super) fn on_add_focus(
 pub(super) fn on_remove_focus(
     trigger: Trigger<OnRemove, Focus>,
     mut commands: Commands,
-    mut interaction_query: Query<(&mut TextInputInactive, &mut TextInputState), With<TextInput>>,
+    mut interaction_query: Query<
+        (&mut InputInactive, &mut InputFieldState),
+        Or<(With<TextInput>, With<NumericInput>)>,
+    >,
 ) {
     let entity = trigger.entity();
     if let Ok((mut inactive, mut state)) = interaction_query.get_mut(entity) {
         inactive.inactive();
-        *state = TextInputState::Default;
+        *state = InputFieldState::Default;
     } else {
         commands.entity(entity).remove::<Focus>();
     }
 }
 
-pub(super) fn on_state_changed(
+pub(super) fn on_state_changed_text(
     mut interaction_query: Query<
         (
-            &TextInputInactive,
-            &TextInputState,
+            &InputInactive,
+            &InputFieldState,
             &mut BackgroundColor,
             &mut BorderColor,
-            // AnyOf<(&DisableTextInput, &WarningTextInput, &ErrorTextInput)>
         ),
-        (Changed<TextInputState>, With<TextInput>),
+        (Changed<InputFieldState>, With<TextInput>),
     >,
 ) {
     for (inactive, state, mut bg, mut border) in &mut interaction_query {
         match (state, inactive.0) {
-            (TextInputState::Default, true) => {
+            (InputFieldState::Default, true) => {
                 *bg = DEFAULT_BACKGROUND_COLOR.into();
                 *border = DEFAULT_BACKGROUND_COLOR.into();
             }
-            (TextInputState::Selected, false) => {
+            (InputFieldState::Selected, false) => {
                 *bg = SELECTED_BACKGROUND_COLOR.into();
                 *border = SELECTED_BORDER_COLOR.into();
             }
-            (TextInputState::Warning, _) => {
+            (InputFieldState::Warning, _) => {
                 *bg = WARNING_BACKGROUND_COLOR.into();
                 *border = WARNING_BORDER_COLOR.into();
             }
-            (TextInputState::Error, _) => {
+            (InputFieldState::Error, _) => {
                 *bg = ERROR_BACKGROUND_COLOR.into();
                 *border = ERROR_BORDER_COLOR.into();
             }
-            (TextInputState::Disabled, _) => {
+            (InputFieldState::Disabled, _) => {
                 *bg = DISABLED_BACKGROUND_COLOR.into();
                 *border = DISABLED_BACKGROUND_COLOR.into();
+            }
+            _ => {}
+        }
+    }
+}
+
+pub(super) fn on_state_changed_numeric(
+    mut interaction_query: Query<
+        (
+            &InputInactive,
+            &InputFieldState,
+            &mut BackgroundColor,
+            &mut BorderColor,
+        ),
+        (Changed<InputFieldState>, With<NumericInput>),
+    >,
+) {
+    for (inactive, state, mut bg, mut border) in &mut interaction_query {
+        match (state, inactive.0) {
+            (InputFieldState::Default, true) => {
+                *bg = DEFAULT_BACKGROUND_COLOR.into();
+                *border = DEFAULT_BACKGROUND_COLOR.into();
+            }
+            (InputFieldState::Selected, false) => {
+                *bg = SELECTED_BACKGROUND_COLOR.into();
+                *border = SELECTED_BORDER_COLOR.into();
+            }
+            (InputFieldState::Disabled, _) => {
+                *bg = DISABLED_BACKGROUND_COLOR.into();
+                *border = DISABLED_BACKGROUND_COLOR.into();
+            }
+            (InputFieldState::Hovered, true) => {
+                *bg = HOVERED_BACKGROUND_COLOR.into();
+                *border = HOVERED_BACKGROUND_COLOR.into();
             }
             _ => {}
         }
@@ -702,10 +859,10 @@ pub(super) fn on_error_validation(
         (
             &Children,
             &mut ErrorValidationCallback,
-            &TextInputValue,
-            &mut TextInputState,
+            &InputTextValue,
+            &mut InputFieldState,
         ),
-        (Changed<TextInputState>, With<TextInput>),
+        (Changed<InputFieldState>, With<TextInput>),
     >,
 ) {
     for (_, mut callback, new_value, mut state) in interaction_query.iter_mut() {
@@ -714,7 +871,7 @@ pub(super) fn on_error_validation(
             if callback.original_state.is_none() {
                 callback.original_state = Some(*state);
             }
-            *state = TextInputState::Error;
+            *state = InputFieldState::Error;
         } else if let (Some(original_state), false) =
             (callback.original_state, state.validation_state())
         {
@@ -728,10 +885,10 @@ pub(super) fn on_warning_validation(
         (
             &Children,
             &mut WarningValidationCallback,
-            &TextInputValue,
-            &mut TextInputState,
+            &InputTextValue,
+            &mut InputFieldState,
         ),
-        (Changed<TextInputState>, With<TextInput>),
+        (Changed<InputFieldState>, With<TextInput>),
     >,
 ) {
     for (_, mut callback, new_value, mut state) in interaction_query.iter_mut() {
@@ -740,11 +897,74 @@ pub(super) fn on_warning_validation(
             if callback.original_state.is_none() {
                 callback.original_state = Some(*state);
             }
-            *state = TextInputState::Warning;
+            *state = InputFieldState::Warning;
         } else if let (Some(original_state), false) =
             (callback.original_state, state.validation_state())
         {
             *state = original_state;
+        }
+    }
+}
+
+#[derive(Component)]
+pub(super) struct PreviousInputState(InputFieldState);
+
+pub(super) fn mouse_over(
+    mut click: Trigger<Pointer<Over>>,
+    mut commands: Commands,
+    clickable_entities: Query<Entity, With<Clickable>>,
+    mut interaction_query: Query<(&mut InputFieldState, &InputInactive), Without<Focus>>,
+) {
+    let entity = click.entity();
+    if clickable_entities.contains(entity) {
+        click.propagate(false);
+
+        if let Ok((mut state, &InputInactive(true))) = interaction_query.get_mut(entity) {
+            if *state != InputFieldState::Hovered {
+                commands.entity(entity).insert(PreviousInputState(*state));
+            }
+            *state = InputFieldState::Hovered;
+        }
+    }
+}
+
+pub(super) fn mouse_move(
+    mut click: Trigger<Pointer<Move>>,
+    mut commands: Commands,
+    clickable_entities: Query<Entity, With<Clickable>>,
+    mut interaction_query: Query<(&mut InputFieldState, &InputInactive), Without<Focus>>,
+) {
+    let entity = click.entity();
+    if clickable_entities.contains(entity) {
+        click.propagate(false);
+
+        if let Ok((mut state, &InputInactive(true))) = interaction_query.get_mut(entity) {
+            if *state != InputFieldState::Hovered {
+                commands.entity(entity).insert(PreviousInputState(*state));
+            } else {
+                *state = InputFieldState::Hovered;
+            }
+        }
+    }
+}
+
+pub(super) fn mouse_out(
+    mut click: Trigger<Pointer<Out>>,
+    mut commands: Commands,
+    clickable_entities: Query<Entity, With<Clickable>>,
+    mut interaction_query: Query<(&mut InputFieldState, Option<&PreviousInputState>)>,
+) {
+    let entity = click.entity();
+    if clickable_entities.contains(entity) {
+        click.propagate(false);
+
+        if let Ok((mut state, previous_state)) = interaction_query.get_mut(entity) {
+            if let Some(previous_state) = previous_state {
+                *state = previous_state.0;
+                commands.entity(entity).remove::<PreviousInputState>();
+            } else {
+                *state = InputFieldState::Default;
+            }
         }
     }
 }

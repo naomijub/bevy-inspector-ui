@@ -16,6 +16,7 @@ bevy = { version = "0.15.0-rc.3", default-features = false, features = [
 ]}
 
 arboard = {version = "3.4.1", features = ["image-data"] }
+num-traits = "0.2.19"
 
 [dev-dependencies]
 bevy = { version = "0.15.0-rc.3", default-features = true }
