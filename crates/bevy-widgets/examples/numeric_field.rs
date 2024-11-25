@@ -1,7 +1,7 @@
 #![allow(missing_docs)]
 use bevy::{prelude::*, winit::WinitSettings};
 use bevy_widgets::{input_fields::*, WidgetsPlugin};
-use builder::{ErrorValidationCallback, TextInputBuilder, WarningValidationCallback};
+use builder::NumericFieldBuilder;
 
 fn main() {
     App::new()
@@ -26,8 +26,6 @@ fn setup(mut commands: Commands) {
             ..Default::default()
         })
         .with_children(|builder| {
-            spawn_node(builder, InputFieldSize::Small);
-            spawn_node(builder, InputFieldSize::Medium);
             builder
                 .spawn(Node {
                     width: Val::Percent(100.0),
@@ -37,39 +35,15 @@ fn setup(mut commands: Commands) {
                     ..default()
                 })
                 .with_children(|parent| {
-                    parent.spawn((
-                        TextInputBuilder::default()
-                            .with_placeholder("placeholder".to_string())
-                            .with_hint_text("hint text".to_string())
+                    parent.spawn(
+                        NumericFieldBuilder::default()
+                            .with_size(InputFieldSize::Medium)
+                            .with_initial_value(7)
+                            .with_range(0..10)
                             .clear_on_submit()
                             .build(),
-                        ErrorValidationCallback::new(|s: &str| s.starts_with("000")),
-                        WarningValidationCallback::new(|s: &str| s.starts_with("111")),
-                    ));
+                    );
                 });
-            spawn_node(builder, InputFieldSize::Large);
-        });
-}
-
-fn spawn_node(builder: &mut ChildBuilder<'_>, input_size: InputFieldSize) {
-    builder
-        .spawn(Node {
-            width: Val::Percent(100.0),
-            height: Val::Percent(100.0),
-            align_items: AlignItems::Center,
-            justify_content: JustifyContent::Center,
-            ..default()
-        })
-        .with_children(|parent| {
-            parent.spawn(
-                TextInputBuilder::default()
-                    .with_size(input_size)
-                    .with_placeholder("placeholder".to_string())
-                    .with_hint_text("hint text".to_string())
-                    .with_label("label".to_string())
-                    .clear_on_submit()
-                    .build(),
-            );
         });
 }
 
