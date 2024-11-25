@@ -14,7 +14,6 @@ use bevy::app::{App, Plugin, Update};
 use buttons::{systems::button_system, ButtonClickedEvent};
 use clipboard::ClipboardPlugin;
 use focus::FocusPlugin;
-// use numberic_field::NumberInputPlugin;
 use input_fields::InputFieldPlugin;
 
 /// Module containing all button related configuration

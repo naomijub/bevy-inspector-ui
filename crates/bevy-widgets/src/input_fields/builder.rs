@@ -195,7 +195,7 @@ impl TextInputBuilder {
 }
 
 /// Numeric field Builder
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct NumericFieldBuilder<T: NumericFieldValue> {
     /// Current value
     pub(crate) value: Option<T>,
@@ -209,6 +209,12 @@ pub struct NumericFieldBuilder<T: NumericFieldValue> {
     pub(crate) drag_step: Option<T>,
     /// Numeric field size
     pub(crate) size: InputFieldSize,
+    /// Max allowed width for component
+    max_width: Option<f32>,
+    /// Min allowed width for component
+    min_width: Option<f32>,
+    /// Initial width for component
+    width: Option<f32>,
     mask: Option<char>,
     retain_on_submit: bool,
 }
@@ -224,6 +230,9 @@ impl<T: NumericFieldValue> Default for NumericFieldBuilder<T> {
             drag_step: None,
             size: InputFieldSize::Medium,
             mask: None,
+            max_width: None,
+            min_width: None,
+            width: None,
         }
     }
 }
@@ -302,6 +311,49 @@ impl<T: NumericFieldValue> NumericFieldBuilder<T> {
         self
     }
 
+    /// Sets the maximum allowed width of the numeric field component.
+    ///
+    /// If None is set, the component will have a maximum width of `3 * InputFieldSize`.
+    pub const fn with_max_width(mut self, width: f32) -> Self {
+        self.max_width = Some(width);
+        self
+    }
+
+    /// Sets the minimum allowed width of the numeric field component.
+    ///
+    /// If None is set, the component will have a minimum width of `52.`.
+    pub const fn with_min_width(mut self, width: f32) -> Self {
+        self.min_width = Some(width);
+        self
+    }
+
+    /// Sets the initial width of the numeric field component.
+    ///
+    /// If None is set, the component will have the same initial width as the `self.min_width | 52`.
+    pub const fn with_initial_width(mut self, width: f32) -> Self {
+        self.width = Some(width);
+        self
+    }
+
+/// Sets a fixed width for the numeric field component.
+///
+/// This method assigns the specified width as the fixed width, minimum width, and maximum width
+/// for the numeric field component. This ensures that the component's width remains constant
+/// regardless of other constraints or layout settings.
+/// 
+/// # Arguments
+///
+/// * `width` - The width to set for the numeric field component.
+/// 
+/// > Useful for when you have know boundaries.
+    pub const fn with_fixed_width(mut self, width: f32) -> Self {
+        self.width = Some(width);
+        self.min_width = Some(width);
+        self.max_width = Some(width);
+        self
+    }
+
+
     /// Builds the numeric field
     pub fn build(
         self,
@@ -330,6 +382,7 @@ impl<T: NumericFieldValue> NumericFieldBuilder<T> {
         let color = InputTextColor(self.size.default_text_color());
         let font = InputTextFont(self.size.default_text_font());
         let value = InputTextValue(self.value.unwrap_or_default().to_string());
+        let min_width = Val::Px(self.min_width.unwrap_or(52.));
 
         (
             NumericInput,
@@ -337,7 +390,12 @@ impl<T: NumericFieldValue> NumericFieldBuilder<T> {
             numeric_field,
             Node {
                 height: Val::Px(field_size.height()),
-                min_width: Val::Px(field_size.min_width()),
+                min_width,
+                max_width: Val::Px(
+                    self.max_width
+                        .unwrap_or_else(|| 3. * field_size.min_width()),
+                ),
+                width: self.width.map_or(min_width, Val::Px),
                 border: UiRect::all(Val::Px(1.0)),
                 padding: field_size.padding(false),
                 justify_content: JustifyContent::End,

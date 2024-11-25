@@ -114,36 +114,29 @@ impl Plugin for InputFieldPlugin {
 
 /// Marker component for a Text Input entity.
 ///
-/// Should be added to a [`bevy::ui::NodeBundle`]:
+/// Due to the amount of underlying configuration, shoulb be created with [`TextInputBuilder`]:
 /// ```rust
 /// # use bevy::prelude::*;
-/// # use bevy_widgets::{text_field::*, WidgetsPlugin};
+/// # use bevy_widgets::{input_fields::{*, builder::*}, WidgetsPlugin};
 /// fn setup(mut commands: Commands) {
 ///     commands
-///         .spawn(NodeBundle {
-///             style: Style {
-///                 width: Val::Percent(100.0),
-///                 height: Val::Percent(100.0),
-///                 align_items: AlignItems::Center,
-///                 justify_content: JustifyContent::Center,
-///                 ..default()
-///             },
+///         .spawn(Node {
+///             width: Val::Percent(100.0),
+///             height: Val::Percent(100.0),
+///             align_items: AlignItems::Center,
+///             justify_content: JustifyContent::Center,
 ///             ..default()
 ///         })
 ///         .with_children(|parent| {
-///             parent.spawn((
-///                 NodeBundle {
-///                     style: Style {
-///                         height: Val::Px(50.0),
-///                         width: Val::Px(200.0),
-///                         border: UiRect::all(Val::Px(5.0)),
-///                         padding: UiRect::all(Val::Px(5.0)),
-///                         ..default()
-///                     },
-///                     ..default()
-///                 },
-///                 TextInput,
-///             ));
+///             parent.spawn(
+///                 TextInputBuilder::default()
+///                     .with_size(InputFieldSize::Medium)
+///                     .with_placeholder("placeholder".to_string())
+///                     .with_hint_text("hint text".to_string())
+///                     .with_label("label".to_string())
+///                     .clear_on_submit()
+///                     .build(),
+///             );
 ///         });
 /// }
 /// ```
@@ -166,37 +159,29 @@ pub struct TextInput;
 
 /// Marker component for a Numeric Input entity.
 ///
-/// Should be added to a [`bevy::ui::NodeBundle`]:
+/// Due to the amount of underlying configuration, shoulb be created with [`NumericFieldBuilder`]:
 /// ```rust
 /// # use bevy::prelude::*;
-/// # use bevy_widgets::{text_field::*, WidgetsPlugin};
+/// # use bevy_widgets::{input_fields::{*, builder::*}, WidgetsPlugin};
 /// fn setup(mut commands: Commands) {
 ///     commands
-///         .spawn(NodeBundle {
-///             style: Style {
-///                 width: Val::Percent(100.0),
-///                 height: Val::Percent(100.0),
-///                 align_items: AlignItems::Center,
-///                 justify_content: JustifyContent::Center,
-///                 ..default()
-///             },
+///         .spawn(Node{
+///             width: Val::Percent(100.0),
+///             height: Val::Percent(100.0),
+///             align_items: AlignItems::Center,
+///             justify_content: JustifyContent::Center,
 ///             ..default()
 ///         })
 ///         .with_children(|parent| {
-///             parent.spawn((
-///                 NodeBundle {
-///                     style: Style {
-///                         height: Val::Px(50.0),
-///                         width: Val::Px(200.0),
-///                         border: UiRect::all(Val::Px(5.0)),
-///                         padding: UiRect::all(Val::Px(5.0)),
-///                         ..default()
-///                     },
-///                     ..default()
-///                 },
-///                 NumericInput,
-///             ));
-///         });
+///            parent.spawn(
+///                NumericFieldBuilder::default()
+///                    .with_size(InputFieldSize::Medium)
+///                    .with_initial_value(7)
+///                    .with_range(0..10)
+///                    .clear_on_submit()
+///                    .build(),
+///            );
+///       });
 /// }
 /// ```
 #[derive(Component)]
