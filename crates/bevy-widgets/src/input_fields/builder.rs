@@ -335,24 +335,23 @@ impl<T: NumericFieldValue> NumericFieldBuilder<T> {
         self
     }
 
-/// Sets a fixed width for the numeric field component.
-///
-/// This method assigns the specified width as the fixed width, minimum width, and maximum width
-/// for the numeric field component. This ensures that the component's width remains constant
-/// regardless of other constraints or layout settings.
-/// 
-/// # Arguments
-///
-/// * `width` - The width to set for the numeric field component.
-/// 
-/// > Useful for when you have know boundaries.
+    /// Sets a fixed width for the numeric field component.
+    ///
+    /// This method assigns the specified width as the fixed width, minimum width, and maximum width
+    /// for the numeric field component. This ensures that the component's width remains constant
+    /// regardless of other constraints or layout settings.
+    ///
+    /// # Arguments
+    ///
+    /// * `width` - The width to set for the numeric field component.
+    ///
+    /// > Useful for when you have know boundaries.
     pub const fn with_fixed_width(mut self, width: f32) -> Self {
         self.width = Some(width);
         self.min_width = Some(width);
         self.max_width = Some(width);
         self
     }
-
 
     /// Builds the numeric field
     pub fn build(
