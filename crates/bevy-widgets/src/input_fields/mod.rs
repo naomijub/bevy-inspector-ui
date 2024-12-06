@@ -1,6 +1,7 @@
 use bevy::{asset::load_internal_binary_asset, ecs::system::SystemParam, prelude::*};
+use builder::NumericFieldBuilder;
 use components::{
-    numeric::NumericField,
+    numeric::{NumericField, NumericFieldValue},
     text::{Placeholder, TextInputDescriptions},
     InputCursorTimer, InputFieldSettings, InputFieldState, InputInactive, InputTextColor,
     InputTextCursorPos, InputTextFont, InputTextValue, TextInputInner,
@@ -85,6 +86,7 @@ impl Plugin for InputFieldPlugin {
                         .after(mouse_over),
                 ),
             )
+            .add_plugins(DragNumericPlugin)
             .register_type::<InputFieldSettings>()
             .register_type::<InputTextColor>()
             .register_type::<InputTextFont>()
@@ -311,5 +313,51 @@ impl<'w, 's> InnerText<'w, 's> {
         self.children_query
             .iter_descendants(entity)
             .find(|descendant_entity| self.text_query.get(*descendant_entity).is_ok())
+    }
+}
+
+/// A trait for spawning constrained numeric field.
+pub trait SpawnNumericField<T> {
+    /// Spawns a numeric field with the provided initial value and range.
+    fn spawn_numeric_field(
+        &mut self,
+        initial_value: T,
+        range: impl std::ops::RangeBounds<T>,
+    ) -> Entity;
+}
+
+impl<T: NumericFieldValue> SpawnNumericField<T> for Commands<'_, '_> {
+    fn spawn_numeric_field(
+        &mut self,
+        initial_value: T,
+        range: impl std::ops::RangeBounds<T>,
+    ) -> Entity {
+        self.spawn(
+            NumericFieldBuilder::default()
+                .with_size(InputFieldSize::Medium)
+                .with_initial_value(initial_value)
+                .with_range(range)
+                .clear_on_submit()
+                .build(),
+        )
+        .id()
+    }
+}
+
+impl<T: NumericFieldValue> SpawnNumericField<T> for ChildBuilder<'_> {
+    fn spawn_numeric_field(
+        &mut self,
+        initial_value: T,
+        range: impl std::ops::RangeBounds<T>,
+    ) -> Entity {
+        self.spawn(
+            NumericFieldBuilder::default()
+                .with_size(InputFieldSize::Medium)
+                .with_initial_value(initial_value)
+                .with_range(range)
+                .clear_on_submit()
+                .build(),
+        )
+        .id()
     }
 }

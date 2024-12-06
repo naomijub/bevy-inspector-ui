@@ -37,11 +37,7 @@ Bevy-inspector-ui is composed of 3 main crates `bevy-inspector-ui`, `bevy-inspec
     - [] Hierarchy submenu
 - [] Embedded icons
 - [] Color field with states
-- [] Number field
-    - [x] states: default, hover, focus, selected and disabled
-    - [] Drag and Arrow pressed behaviors
-    - [] vector fields
-    - [] vector fields states
+- [] Vector field
 - [] Checkboxes => bool
     - [] states: default, hover, focus, selected and disabled
     - [] label

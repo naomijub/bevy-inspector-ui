@@ -13,7 +13,7 @@ use bevy::{
 
 use builder::{ErrorValidationCallback, WarningValidationCallback};
 use components::{
-    numeric::{NumericField, NumericFieldValue},
+    numeric::{NumericDelta, NumericDeltaInitialValue, NumericField, NumericFieldValue},
     text::TextInputPlaceholderInner,
     AllowedCharSet,
 };
@@ -966,5 +966,141 @@ pub(super) fn mouse_out(
                 *state = InputFieldState::Default;
             }
         }
+    }
+}
+
+pub fn on_drag<T: NumericFieldValue>(
+    trigger: Trigger<Pointer<Drag>>,
+    mut q_fields: Query<(&mut NumericField<T>, &mut NumericDelta, &mut InputTextValue)>,
+) {
+    let event_delta = trigger.delta.normalize();
+    let entity = trigger.entity();
+    if let Ok((mut field, mut delta, mut value)) = q_fields.get_mut(entity) {
+        if let Some(drag_delta) = field.drag_step.unwrap_or_default().to_f64() {
+            delta.accumulated_delta +=
+                drag_delta.mul_add(event_delta.x as f64, drag_delta * event_delta.y as f64);
+            let new_value = field.value
+                - field.drag_step.unwrap_or_default() * T::from(event_delta.y).unwrap_or_default()
+                + field.drag_step.unwrap_or_default() * T::from(event_delta.x).unwrap_or_default();
+            field.set_value(new_value);
+            value.0 = field.value.to_string();
+        }
+    }
+}
+
+pub fn on_drag_start<T: NumericFieldValue>(
+    trigger: Trigger<Pointer<DragStart>>,
+    mut commands: Commands,
+    q_fields: Query<&NumericField<T>, (With<NumericDelta>, With<InputTextValue>)>,
+) {
+    let entity = trigger.entity();
+    if let Ok(field) = q_fields.get(entity) {
+        let initial_value = NumericDeltaInitialValue {
+            initial_value: field.value,
+        };
+        commands.entity(entity).insert(initial_value);
+    }
+}
+
+pub fn on_drag_end<T: NumericFieldValue>(
+    trigger: Trigger<Pointer<DragEnd>>,
+    mut commands: Commands,
+    mut q_fields: Query<
+        &mut NumericDelta,
+        (
+            With<NumericDeltaInitialValue<T>>,
+            With<NumericField<T>>,
+            With<InputTextValue>,
+        ),
+    >,
+) {
+    let entity = trigger.entity();
+    if let Ok(mut delta) = q_fields.get_mut(entity) {
+        delta.accumulated_delta = 0.0;
+        commands
+            .entity(entity)
+            .remove::<NumericDeltaInitialValue<T>>();
+    }
+}
+
+pub fn on_drag_exit<T: NumericFieldValue>(
+    mut commands: Commands,
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+    mut q_fields: Query<(
+        Entity,
+        &mut NumericField<T>,
+        &mut NumericDelta,
+        &mut InputTextValue,
+        &NumericDeltaInitialValue<T>,
+    )>,
+) {
+    if keyboard_input.just_pressed(KeyCode::Escape) {
+        for (entity, mut field, mut delta, mut text, initial_value) in q_fields.iter_mut() {
+            delta.accumulated_delta = 0.0;
+            commands
+                .entity(entity)
+                .remove::<NumericDeltaInitialValue<T>>();
+            field.set_value(initial_value.initial_value);
+            text.0 = field.value.to_string();
+        }
+    }
+}
+
+pub struct DragNumericPlugin;
+impl Plugin for DragNumericPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(
+            Update,
+            (
+                on_drag_exit::<f32>,
+                on_drag_exit::<f64>,
+                on_drag_exit::<u8>,
+                on_drag_exit::<u16>,
+                on_drag_exit::<u32>,
+                on_drag_exit::<u64>,
+                on_drag_exit::<u128>,
+                on_drag_exit::<i8>,
+                on_drag_exit::<i16>,
+                on_drag_exit::<i32>,
+                on_drag_exit::<i64>,
+                on_drag_exit::<i128>,
+            ),
+        )
+        .add_observer(on_drag::<f32>)
+        .add_observer(on_drag_start::<f32>)
+        .add_observer(on_drag_end::<f32>)
+        .add_observer(on_drag::<f64>)
+        .add_observer(on_drag_start::<f64>)
+        .add_observer(on_drag_end::<f64>)
+        .add_observer(on_drag::<u8>)
+        .add_observer(on_drag_start::<u8>)
+        .add_observer(on_drag_end::<u8>)
+        .add_observer(on_drag::<u16>)
+        .add_observer(on_drag_start::<u16>)
+        .add_observer(on_drag_end::<u16>)
+        .add_observer(on_drag::<u32>)
+        .add_observer(on_drag_start::<u32>)
+        .add_observer(on_drag_end::<u32>)
+        .add_observer(on_drag::<u64>)
+        .add_observer(on_drag_start::<u64>)
+        .add_observer(on_drag_end::<u64>)
+        .add_observer(on_drag::<u128>)
+        .add_observer(on_drag_start::<u128>)
+        .add_observer(on_drag_end::<u128>)
+        .add_observer(on_drag::<i8>)
+        .add_observer(on_drag_start::<i8>)
+        .add_observer(on_drag_end::<i8>)
+        .add_observer(on_drag::<i16>)
+        .add_observer(on_drag_start::<i16>)
+        .add_observer(on_drag_end::<i16>)
+        .add_observer(on_drag::<i32>)
+        .add_observer(on_drag_start::<i32>)
+        .add_observer(on_drag_end::<i32>)
+        .add_observer(on_drag::<i64>)
+        .add_observer(on_drag_start::<i64>)
+        .add_observer(on_drag_end::<i64>)
+        .add_observer(on_drag::<i128>)
+        .add_observer(on_drag_start::<i128>)
+        .add_observer(on_drag_end::<i128>);
     }
 }

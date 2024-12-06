@@ -2,7 +2,7 @@ use std::ops::{Bound, RangeBounds};
 
 use super::{
     components::{
-        numeric::{NumericField, NumericFieldValue},
+        numeric::{NumericDelta, NumericField, NumericFieldValue},
         text::{Placeholder, TextInputDescriptions},
         AllowedCharSet, InputFieldSize, InputFieldState,
     },
@@ -370,6 +370,7 @@ impl<T: NumericFieldValue> NumericFieldBuilder<T> {
         InputTextValue,
         InputFieldSize,
         InputFieldState,
+        NumericDelta,
     ) {
         let numeric_field: NumericField<T> = self.into();
         let field_size = self.size;
@@ -409,6 +410,7 @@ impl<T: NumericFieldValue> NumericFieldBuilder<T> {
             value,
             field_size,
             state,
+            NumericDelta::default(),
         )
     }
 }
