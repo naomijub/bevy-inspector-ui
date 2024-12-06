@@ -308,7 +308,7 @@ pub struct InnerText<'w, 's> {
     text_query: Query<'w, 's, (), With<TextInputInner>>,
     children_query: Query<'w, 's, &'static Children>,
 }
-impl<'w, 's> InnerText<'w, 's> {
+impl InnerText<'_, '_> {
     fn inner_entity(&self, entity: Entity) -> Option<Entity> {
         self.children_query
             .iter_descendants(entity)
