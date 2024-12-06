@@ -8,7 +8,7 @@ use bevy::{
     render::camera::RenderTarget,
     text::TextLayoutInfo,
     ui::FocusPolicy,
-    window::{PrimaryWindow, WindowRef},
+    window::{PrimaryWindow, Window, WindowRef},
 };
 
 use builder::{ErrorValidationCallback, WarningValidationCallback};
@@ -40,6 +40,13 @@ pub fn on_numeric_text_changed<T: NumericFieldValue>(
     }
 }
 
+/*************  ✨ Codeium Command ⭐  *************/
+/// Handles keyboard input for text fields, processing text navigation, editing actions,
+/// and submission. This function listens for key events and modifies the text and cursor
+/// position accordingly. It supports actions like moving the cursor, deleting characters,
+/// and submitting the text input. The function also respects custom character sets and
+/// modifiers for key bindings.
+/******  64dbc4ce-2692-42fb-80aa-7599990a8682  *******/
 pub(super) fn keyboard(
     key_input: Res<ButtonInput<KeyCode>>,
     input_events: Res<Events<KeyboardInput>>,
