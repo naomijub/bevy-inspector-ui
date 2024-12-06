@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use num_traits::{clamp, Bounded, CheckedAdd, CheckedSub, NumCast};
 use std::cmp::PartialOrd;
-use std::ops::{Add, Bound, RangeBounds, Sub};
+use std::ops::{Add, Bound, Div, Mul, RangeBounds, Sub};
 use std::str::FromStr;
 
 use crate::input_fields::builder::NumericFieldBuilder;
@@ -45,6 +45,8 @@ pub trait NumericFieldValue:
     + PartialOrd
     + Add<Output = Self>
     + Sub<Output = Self>
+    + Mul<Output = Self>
+    + Div<Output = Self>
     + NumCast
     + PartialEq
     + Send
@@ -230,4 +232,16 @@ impl NumericFieldValue for f64 {
     fn checked_sub(&self, rhs: &Self) -> Option<Self> {
         Some(*self - *rhs)
     }
+}
+
+/// Accumulated delta during a mouse drag
+#[derive(Component, Reflect, Default)]
+pub struct NumericDelta {
+    pub accumulated_delta: f64,
+}
+
+/// Accumulated delta during a mouse drag
+#[derive(Component, Reflect)]
+pub struct NumericDeltaInitialValue<T: NumericFieldValue> {
+    pub initial_value: T,
 }
